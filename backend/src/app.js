@@ -3,8 +3,13 @@ const session = require("express-session");
 const passport = require("./config/passport");
 
 const authRoutes = require("./routes/auth.routes");
+const deployRoutes = require("./routes/deploy.routes")
 
 const app = express();
+
+BigInt.prototype.toJSON = function () {
+  return this.toString()
+}
 
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "http://localhost:5173");
@@ -39,6 +44,7 @@ app.use(passport.session());
 
 
 app.use("/auth", authRoutes);
+app.use("/deploy", deployRoutes)
 
 app.get("/auth/user", (req, res) => {
   if (req.user) {
