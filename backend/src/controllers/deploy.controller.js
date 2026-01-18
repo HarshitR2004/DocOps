@@ -1,6 +1,8 @@
 const deployService = require("../services/deploy.service");
 const { prisma } = require("../config/prisma.config");
 
+
+
 exports.deployPublicRepo = async (req, res) => {
   const { repoUrl, branch = "main" } = req.body;
 
@@ -9,17 +11,31 @@ exports.deployPublicRepo = async (req, res) => {
   }
 
   try {
-      const deployment = await deployService.deployFromPublicRepo({
+      const deployment = await deployService.initiateDeployment({
         repoUrl,
         branch,
       });
 
       res.status(202).json({
-        message: "Deployment started",
+        message: "Deployment initiated",
         deploymentId: deployment.id,
       });
+      
+      const fullDeployment = await prisma.deployment.findUnique({
+          where: { id: deployment.id },
+          include: { repository: true }
+      });
+
+      if (fullDeployment) {
+         deployService.processDeployment(fullDeployment);
+      }
+
   } catch(e) {
-      res.status(500).json({ error: e.message });
+      if (!res.headersSent) {
+        res.status(500).json({ error: e.message });
+      } else {
+        console.error("Error after response sent:", e);
+      }
   }
 };
 

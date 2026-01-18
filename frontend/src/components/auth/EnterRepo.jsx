@@ -1,126 +1,115 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { Field, Input, Button, Label } from '@headlessui/react'
 import clsx from 'clsx'
-import { deployService } from '../../services/deployService'
+import { useDeployForm } from '../../hooks/useDeployForm'
+import { useNavigate } from 'react-router-dom'
 
 const EnterRepo = ({ onDeploymentStart }) => {
-  const [repoUrl, setRepoUrl] = useState('')
-  const [branch, setBranch] = useState('main')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
-  const [success, setSuccess] = useState(null)
-
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    
-    // Reset states
-    setError(null)
-    setSuccess(null)
-    setLoading(true)
-
-    try {
-      // Validate URL
-      if (!repoUrl.trim()) {
-        throw new Error('Repository URL is required')
-      }
-
-      // Basic GitHub URL validation
-      if (!repoUrl.includes('github.com')) {
-        throw new Error('Please enter a valid GitHub repository URL')
-      }
-
-      // Call deploy service
-      const response = await deployService.deployPublicRepo({
-        repoUrl: repoUrl.trim(),
-        branch: branch.trim() || 'main'
-      })
-
-      setSuccess(`Deployment started! ID: ${response.deploymentId}`)
-      
-      // Notify parent component
-      if (onDeploymentStart) {
-        onDeploymentStart(response)
-      }
-
-      // Reset form
-      setRepoUrl('')
-      setBranch('main')
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setLoading(false)
+  const navigate = useNavigate()
+  const handleSuccess = (response) => {
+    if (onDeploymentStart) onDeploymentStart(response)
+    if (response?.deploymentId) {
+      navigate(`/deployment/${response.deploymentId}`)
     }
   }
 
+  const {
+    repoUrl,
+    setRepoUrl,
+    branch,
+    setBranch,
+    loading,
+    error,
+    success,
+    handleSubmit
+  } = useDeployForm(handleSuccess)
+
   return (
-    <div className="w-full flex flex-col gap-6">
-      <div className="text-center">
-        <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-2">
-          Enter Public Repository Link
-        </h2>
-      </div>
+    <div className="w-full max-w-2xl mx-auto">
+      <div className="glass-panel rounded-sm border-l-4 border-l-primary p-6 tech-border">
+        <div className="mb-6 border-b border-white/10 pb-4">
+          <h2 className="text-lg font-mono font-bold text-primary tracking-widest uppercase flex items-center gap-2">
+            <span className="text-secondary opacity-50">&gt;</span> INITIALIZE_DEPLOYMENT
+          </h2>
+          <p className="text-xs text-secondary font-mono mt-1 ml-4">Enter public repository coordinates</p>
+        </div>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <Field>
-          <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            GitHub Repository URL
-          </Label>
-          <Input
-            type="text"
-            value={repoUrl}
-            onChange={(e) => setRepoUrl(e.target.value)}
-            placeholder="https://github.com/username/repository"
-            disabled={loading}
-            className={clsx(
-              'mt-1 block w-full rounded-lg border-none bg-gray-100 dark:bg-gray-700 px-3 py-2 text-sm/6 text-gray-900 dark:text-white',
-              'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800',
-              'disabled:opacity-50 disabled:cursor-not-allowed'
-            )}
-          />
-        </Field>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+          <Field className="group">
+            <Label className="text-xs font-mono font-bold text-dim uppercase mb-1 block group-focus-within:text-primary transition-colors">
+              // TARGET_REPOSITORY_URL
+            </Label>
+            <div className="relative flex items-center">
+                <span className="absolute left-3 text-secondary font-mono text-sm">&gt;</span>
+                <Input
+                type="text"
+                value={repoUrl}
+                onChange={(e) => setRepoUrl(e.target.value)}
+                placeholder="https://github.com/username/repository"
+                disabled={loading}
+                className={clsx(
+                    'block w-full rounded-sm bg-black/50 border border-border pl-8 pr-3 py-3 text-sm font-mono text-text-primary placeholder:text-dim',
+                    'focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 transition-all',
+                    'disabled:opacity-50 disabled:cursor-not-allowed'
+                )}
+                />
+            </div>
+          </Field>
 
-        <Field>
-          <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            Branch (optional)
-          </Label>
-          <Input
-            type="text"
-            value={branch}
-            onChange={(e) => setBranch(e.target.value)}
-            placeholder="main"
-            disabled={loading}
-            className={clsx(
-              'mt-1 block w-full rounded-lg border-none bg-gray-100 dark:bg-gray-700 px-3 py-2 text-sm/6 text-gray-900 dark:text-white',
-              'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800',
-              'disabled:opacity-50 disabled:cursor-not-allowed'
-            )}
-          />
-        </Field>
+          <Field className="group">
+            <Label className="text-xs font-mono font-bold text-dim uppercase mb-1 block group-focus-within:text-primary transition-colors">
+               // TARGET_BRANCH [OPTIONAL]
+            </Label>
+            <div className="relative flex items-center">
+                 <span className="absolute left-3 text-secondary font-mono text-sm">#</span>
+                <Input
+                type="text"
+                value={branch}
+                onChange={(e) => setBranch(e.target.value)}
+                placeholder="main"
+                disabled={loading}
+                className={clsx(
+                    'block w-full rounded-sm bg-black/50 border border-border pl-8 pr-3 py-3 text-sm font-mono text-text-primary placeholder:text-dim',
+                    'focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 transition-all',
+                    'disabled:opacity-50 disabled:cursor-not-allowed'
+                )}
+                />
+            </div>
+          </Field>
 
-        {error && (
-          <div className="p-3 rounded-md bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700">
-            <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
-          </div>
-        )}
-
-        {success && (
-          <div className="p-3 rounded-md bg-green-100 dark:bg-green-900/30 border border-green-300 dark:border-green-700">
-            <p className="text-sm text-green-700 dark:text-green-300">{success}</p>
-          </div>
-        )}
-
-        <Button
-          type="submit"
-          disabled={loading}
-          className={clsx(
-            'flex w-full items-center justify-center gap-2 rounded-md bg-gray-700 px-3 py-1.5 text-sm/6 font-semibold text-white shadow-inner shadow-white/10',
-            'focus:not-data-focus:outline-none data-focus:outline data-focus:outline-white data-hover:bg-gray-600 data-open:bg-gray-700',
-            'disabled:opacity-50 disabled:cursor-not-allowed'
+          {error && (
+            <div className="p-3 border-l-2 border-danger bg-danger/5 text-danger font-mono text-xs">
+              <span className="font-bold">ERROR::</span> {error}
+            </div>
           )}
-        >
-          {loading ? 'Starting Deployment...' : 'Start Deployment'}
-        </Button>
-      </form>
+
+          {success && (
+            <div className="p-3 border-l-2 border-success bg-success/5 text-success font-mono text-xs">
+               <span className="font-bold">SUCCESS::</span> {success}
+            </div>
+          )}
+
+          <Button
+            type="submit"
+            disabled={loading}
+            className={clsx(
+              'mt-2 flex w-full items-center justify-center gap-2 rounded-sm bg-primary/10 border border-primary px-4 py-3 text-sm font-mono font-bold uppercase text-primary tracking-wider transition-all',
+              'hover:bg-primary hover:text-black hover:shadow-[0_0_15px_rgba(0,240,255,0.5)]',
+              'active:scale-[0.98]',
+              'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none disabled:hover:bg-primary/10 disabled:hover:text-primary'
+            )}
+          >
+            {loading ? (
+                <span className="flex items-center gap-2">
+                    <span className="animate-spin h-3 w-3 border-2 border-primary border-t-transparent rounded-full"></span> 
+                    INITIATING_SEQUENCE...
+                </span>
+            ) : (
+                'EXECUTE_DEPLOYMENT_SEQUENCE'
+            )}
+          </Button>
+        </form>
+      </div>
     </div>
   )
 }

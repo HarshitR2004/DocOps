@@ -33,6 +33,16 @@ class SocketService {
     });
   }
 
+  subscribeToBuildLogs(deploymentId, callback) {
+    if (!this.socket) this.connect();
+
+    this.socket.emit("subscribe-build-logs", { deploymentId });
+
+    this.socket.on("build-logs", (logData) => {
+      callback(logData);
+    });
+  }
+
   unsubscribeFromLogs() {
     if (this.socket) {
       this.socket.off("logs");

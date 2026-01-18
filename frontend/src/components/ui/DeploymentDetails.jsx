@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react'
-import { deployService } from '../../services/deployService'
+import React, { useEffect } from 'react'
+import { useDeployment } from '../../hooks/useDeployment'
+import { getStatusColor, formatDate } from '../../utils/deploymentUtils'
 import clsx from 'clsx'
 
 /**
@@ -8,73 +9,46 @@ import clsx from 'clsx'
  * @param {string} props.deploymentId - The ID of the deployment to display
  */
 const DeploymentDetails = ({ deploymentId }) => {
-  const [deployment, setDeployment] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const {
+    deployment,
+    loading,
+    error,
+    fetchDeployment
+  } = useDeployment(deploymentId)
 
   useEffect(() => {
-    if (deploymentId) {
-      fetchDeployment()
-    }
-  }, [deploymentId])
-
-  const fetchDeployment = async () => {
-    try {
-      setLoading(true)
-      setError(null)
-      const data = await deployService.getDeploymentById(deploymentId)
-      setDeployment(data)
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'RUNNING':
-        return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 border-green-300 dark:border-green-700'
-      case 'BUILDING':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 border-blue-300 dark:border-blue-700'
-      case 'PENDING':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300 border-yellow-300 dark:border-yellow-700'
-      case 'FAILED':
-        return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 border-red-300 dark:border-red-700'
-      default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600'
-    }
-  }
-
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleString()
-  }
+    fetchDeployment()
+  }, [deploymentId, fetchDeployment])
 
   if (!deploymentId) {
     return (
       <div className="text-center py-8">
-        <p className="text-gray-500 dark:text-gray-400">No deployment selected</p>
+        <p className="text-secondary font-mono">No deployment selected</p>
       </div>
     )
   }
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-white"></div>
-      </div>
+     return (
+        <div className="flex items-center justify-center py-8">
+            <div className="relative w-8 h-8">
+                <div className="absolute inset-0 border-2 border-primary/20 rounded-full animate-ping"></div>
+                <div className="absolute inset-0 border-2 border-t-primary rounded-full animate-spin"></div>
+            </div>
+        </div>
     )
   }
 
   if (error) {
     return (
-      <div className="p-4 rounded-md bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700">
-        <p className="text-sm text-red-700 dark:text-red-300">Error: {error}</p>
+      <div className="p-4 rounded-sm border border-danger/30 bg-danger/10 text-danger font-mono text-xs">
+        <p className="font-bold mb-2">ERROR::FETCH_FAILED</p>
+        <p>{error}</p>
         <button
           onClick={fetchDeployment}
-          className="mt-2 text-sm text-red-700 dark:text-red-300 hover:underline"
+          className="mt-3 text-xs border border-danger px-3 py-1 hover:bg-danger hover:text-white transition-colors uppercase"
         >
-          Retry
+          Recall Data
         </button>
       </div>
     )
@@ -83,130 +57,110 @@ const DeploymentDetails = ({ deploymentId }) => {
   if (!deployment) {
     return (
       <div className="text-center py-8">
-        <p className="text-gray-500 dark:text-gray-400">Deployment not found</p>
+        <p className="text-secondary font-mono">Deployment data not found in registry.</p>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-enter">
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between border-b border-white/10 pb-4">
         <div>
-          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-            Deployment Details
+          <h3 className="text-xl font-bold text-text-primary mb-1 tracking-tight font-mono uppercase">
+            Operation Details
           </h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400 font-mono">
-            ID: {deployment.id}
+          <p className="text-[10px] text-dim font-mono uppercase tracking-widest">
+            ID: <span className="text-primary">{deployment.id}</span>
           </p>
         </div>
         <button
           onClick={fetchDeployment}
-          className="px-3 py-1 text-sm bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+          className="px-3 py-1.5 text-xs bg-surface border border-border text-secondary rounded-sm hover:border-primary hover:text-primary transition-colors font-mono uppercase"
         >
-          Refresh
+          Sync Data
         </button>
       </div>
 
       {/* Status Badge */}
-      <div
-        className={clsx(
-          'inline-flex items-center px-4 py-2 rounded-lg border font-medium',
-          getStatusColor(deployment.status)
-        )}
-      >
-        Status: {deployment.status}
-      </div>
-
-      {/* Repository Information */}
-      {deployment.repository && (
-        <div className="p-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
-          <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
-            Repository Information
-          </h4>
-          <dl className="space-y-2 text-sm">
-            <div>
-              <dt className="inline font-medium text-gray-700 dark:text-gray-300">Name: </dt>
-              <dd className="inline text-gray-600 dark:text-gray-400">{deployment.repository.name}</dd>
-            </div>
-            <div>
-              <dt className="inline font-medium text-gray-700 dark:text-gray-300">Full Name: </dt>
-              <dd className="inline text-gray-600 dark:text-gray-400">{deployment.repository.fullName}</dd>
-            </div>
-            {deployment.repository.cloneUrl && (
-              <div>
-                <dt className="inline font-medium text-gray-700 dark:text-gray-300">Clone URL: </dt>
-                <dd className="inline">
-                  <a
-                    href={deployment.repository.cloneUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 dark:text-blue-400 hover:underline"
-                  >
-                    {deployment.repository.cloneUrl}
-                  </a>
-                </dd>
-              </div>
+      <div className="flex items-center gap-4">
+        <span className="text-xs font-mono text-secondary uppercase">Current Status:</span>
+        <div
+            className={clsx(
+            'inline-flex items-center px-3 py-1 rounded-sm border font-bold text-xs uppercase tracking-wider',
+            getStatusColor(deployment.status)
             )}
-          </dl>
+        >
+            {deployment.status}
         </div>
-      )}
-
-      {/* Deployment Information */}
-      <div className="p-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
-        <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
-          Deployment Information
-        </h4>
-        <dl className="space-y-2 text-sm">
-          <div>
-            <dt className="inline font-medium text-gray-700 dark:text-gray-300">Branch: </dt>
-            <dd className="inline text-gray-600 dark:text-gray-400 font-mono">{deployment.branch}</dd>
-          </div>
-          <div>
-            <dt className="inline font-medium text-gray-700 dark:text-gray-300">Commit SHA: </dt>
-            <dd className="inline text-gray-600 dark:text-gray-400 font-mono">{deployment.commitSha}</dd>
-          </div>
-          {deployment.imageTag && (
-            <div>
-              <dt className="inline font-medium text-gray-700 dark:text-gray-300">Image Tag: </dt>
-              <dd className="inline text-gray-600 dark:text-gray-400 font-mono">{deployment.imageTag}</dd>
-            </div>
-          )}
-          {deployment.containerId && (
-            <div>
-              <dt className="inline font-medium text-gray-700 dark:text-gray-300">Container ID: </dt>
-              <dd className="inline text-gray-600 dark:text-gray-400 font-mono">{deployment.containerId.substring(0, 12)}</dd>
-            </div>
-          )}
-          {deployment.exposedPort && (
-            <div>
-              <dt className="inline font-medium text-gray-700 dark:text-gray-300">Exposed Port: </dt>
-              <dd className="inline text-gray-600 dark:text-gray-400 font-mono">{deployment.exposedPort}</dd>
-            </div>
-          )}
-          <div>
-            <dt className="inline font-medium text-gray-700 dark:text-gray-300">Created: </dt>
-            <dd className="inline text-gray-600 dark:text-gray-400">{formatDate(deployment.createdAt)}</dd>
-          </div>
-          {deployment.updatedAt && (
-            <div>
-              <dt className="inline font-medium text-gray-700 dark:text-gray-300">Updated: </dt>
-              <dd className="inline text-gray-600 dark:text-gray-400">{formatDate(deployment.updatedAt)}</dd>
-            </div>
-          )}
-        </dl>
       </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Repository Information */}
+        {deployment.repository && (
+            <div className="glass-panel p-5 rounded-sm tech-border">
+            <h4 className="text-xs font-bold text-primary mb-4 uppercase tracking-widest border-b border-primary/20 pb-2">
+                Source Repository
+            </h4>
+            <dl className="space-y-3 text-xs font-mono">
+                <div className="flex justify-between">
+                    <dt className="text-dim">Name</dt>
+                    <dd className="text-text-primary text-right">{deployment.repository.name}</dd>
+                </div>
+                {deployment.repository.cloneUrl && (
+                <div className="flex flex-col gap-1 mt-2">
+                    <dt className="text-dim">Clone URL</dt>
+                    <dd className="text-right truncate w-full">
+                        <a
+                            href={deployment.repository.cloneUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary hover:text-white transition-colors hover:underline"
+                        >
+                            {deployment.repository.cloneUrl}
+                        </a>
+                    </dd>
+                </div>
+                )}
+            </dl>
+            </div>
+        )}
+
+        {/* Deployment Information */}
+        <div className="glass-panel p-5 rounded-sm tech-border">
+            <h4 className="text-xs font-bold text-primary mb-4 uppercase tracking-widest border-b border-primary/20 pb-2">
+            Configuration
+            </h4>
+            <dl className="space-y-3 text-xs font-mono">
+            <div className="flex justify-between">
+                <dt className="text-dim">Target Branch</dt>
+                <dd className="text-text-primary">{deployment.branch}</dd>
+            </div>
+            {deployment.exposedPort && (
+                <div className="flex justify-between">
+                    <dt className="text-dim">Exposed Port</dt>
+                    <dd className="text-primary font-bold">{deployment.exposedPort}</dd>
+                </div>
+            )}
+            <div className="flex justify-between">
+                <dt className="text-dim">Initiated At</dt>
+                <dd className="text-text-primary">{formatDate(deployment.createdAt)}</dd>
+            </div>
+            </dl>
+        </div>
+      </div>
+
 
       {/* Action Buttons */}
       {deployment.status === 'RUNNING' && deployment.exposedPort && (
-        <div className="flex gap-3">
+        <div className="pt-4">
           <a
             href={`http://localhost:${deployment.exposedPort}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex-1 text-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium"
+            className="block w-full text-center px-6 py-3 bg-primary/10 border border-primary text-primary hover:bg-primary hover:text-black transition-all font-bold uppercase tracking-widest text-sm rounded-sm hover:shadow-[0_0_20px_rgba(0,240,255,0.4)]"
           >
-            Open Application
+            Launch Application Interface
           </a>
         </div>
       )}

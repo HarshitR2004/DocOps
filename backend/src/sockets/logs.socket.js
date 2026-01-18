@@ -5,6 +5,7 @@ module.exports = (io) => {
   io.on("connection", (socket) => {
     console.log("Socket connected:", socket.id);
 
+    // Runtime logs subscription (legacy/direct stream)
     socket.on("subscribe-logs", async ({ deploymentId }) => {
       const deployment = await prisma.deployment.findUnique({
         where: { id: deploymentId },
@@ -21,6 +22,16 @@ module.exports = (io) => {
           socket.emit("logs", logLine);
         }
       );
+    });
+
+    // Build logs subscription
+    socket.on("subscribe-build-logs", ({ deploymentId }) => {
+      socket.join(`build-${deploymentId}`);
+    });
+
+    // Runtime logs room subscription
+    socket.on("subscribe-runtime-logs", ({ deploymentId }) => {
+      socket.join(`runtime-${deploymentId}`);
     });
 
     socket.on("disconnect", () => {

@@ -2,32 +2,45 @@ const { prisma } = require("../config/prisma.config");
 const path = require("path");
 const { exec } = require("child_process");
 const generateDockerfile = require("../utils/docker_generator");
+const ioManager = require("../sockets/io");
+const dockerService = require("../services/docker.service");
 
-exports.deployFromPublicRepo = async ({ repoUrl, branch }) => {
-  const [, , , owner, repoName] = repoUrl.split("/");
-  const fullName = `${owner}/${repoName.replace(".git", "")}`;
 
-  const repository = await prisma.repository.create({
-    data: {
-      githubRepoId: BigInt(0),
-      name: repoName,
-      fullName,
-      cloneUrl: repoUrl,
-      defaultBranch: branch,
-      webhookId: BigInt(0),
-    },
-  });
 
-  const deployment = await prisma.deployment.create({
-    data: {
-      repositoryId: repository.id,
-      branch,
-      commitSha: "UNKNOWN",
-      status: "PENDING",
-    },
-  });
+exports.initiateDeployment = async ({ repoUrl, branch }) => {
+    const [, , , owner, repoName] = repoUrl.split("/");
+    const fullName = `${owner}/${repoName.replace(".git", "")}`;
 
+    const repository = await prisma.repository.create({
+      data: {
+        githubRepoId: BigInt(0),
+        name: repoName,
+        fullName,
+        cloneUrl: repoUrl,
+        defaultBranch: branch,
+        webhookId: BigInt(0),
+      },
+    });
+
+    const deployment = await prisma.deployment.create({
+      data: {
+        repositoryId: repository.id,
+        branch,
+        commitSha: "UNKNOWN",
+        status: "PENDING",
+      },
+    });
+
+    return deployment;
+}
+
+
+
+exports.processDeployment = async (deployment) => {
   const workDir = path.join("/tmp", deployment.id);
+  const repoUrl = deployment.repository.cloneUrl;
+  const branch = deployment.branch;
+  const repoName = deployment.repository.name;
 
   try {
     await run(`git clone -b ${branch} ${repoUrl} ${workDir}`);
@@ -41,7 +54,13 @@ exports.deployFromPublicRepo = async ({ repoUrl, branch }) => {
       data: { status: "BUILDING", commitSha: commitSha },
     });
 
-    await run(`docker build -t ${imageTag} .`, workDir);
+    await dockerService.buildImage({
+          imageTag,
+          contextDir: workDir,
+          onLog: (log) => {
+            ioManager.get().to(`build-${deployment.id}`).emit("build-logs", log);
+          },
+    });
 
     const port = 3000 + Math.floor(Math.random() * 1000);
     const containerId = await run(
@@ -59,25 +78,23 @@ exports.deployFromPublicRepo = async ({ repoUrl, branch }) => {
       },
     });
 
-    return await prisma.deployment.update({
+    await prisma.deployment.update({
       where: { id: deployment.id },
       data: {
         status: "RUNNING",
         imageTag,
-        containerId: containerId.trim(), // Keep this for redudancy or legacy if schema has it, but schema has `containerId` string field? Schema has `containerId String?` and `container Container?`.
+        containerId: containerId.trim(),
         exposedPort: port,
       },
-      include: {
-        container: true
-      }
     });
   } catch (err) {
+    console.error("Deployment failed:", err);
     await prisma.deployment.update({
       where: { id: deployment.id },
       data: { status: "FAILED" },
     });
-
-    throw err;
+    
+    ioManager.get().to(`build-${deployment.id}`).emit("build-logs", `\nDeployment Failed: ${err.message}\n`);
   }
 };
 

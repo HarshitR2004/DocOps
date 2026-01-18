@@ -2,6 +2,8 @@ const http = require("http");
 const app = require("./app");
 const { Server } = require("socket.io");
 const initLogSockets = require("./sockets/logs.socket");
+const ioManager = require("./sockets/io");
+
 
 const PORT = 8080;
 
@@ -13,7 +15,11 @@ const io = new Server(server, {
   }
 });
 
+
+ioManager.init(io);
+
 initLogSockets(io);
+
 
 server.listen(PORT, () => {
   console.log(`DocOps Backend running on port ${PORT}`);
