@@ -60,7 +60,7 @@ const listDeployments = async () => {
 };
 
 /**
- * Delete a deployment by ID
+ * Delete a deployment by ID (also deletes associated containers)
  * @param {string} deploymentId - Deployment ID
  * @returns {Promise<Object>} Delete response
  */

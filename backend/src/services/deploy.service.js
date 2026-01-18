@@ -2,6 +2,7 @@ const { prisma } = require("../config/prisma.config");
 const path = require("path");
 const { exec } = require("child_process");
 const generateDockerfile = require("../utils/docker_generator");
+const { connect } = require("http2");
 
 exports.deployFromPublicRepo = async ({ repoUrl, branch }) => {
   const [, , , owner, repoName] = repoUrl.split("/");
@@ -22,7 +23,7 @@ exports.deployFromPublicRepo = async ({ repoUrl, branch }) => {
     data: {
       repositoryId: repository.id,
       branch,
-      commitSha: "HEAD",
+      commitSha: "UNKNOWN",
       status: "PENDING",
     },
   });
@@ -31,21 +32,36 @@ exports.deployFromPublicRepo = async ({ repoUrl, branch }) => {
 
   try {
     await run(`git clone -b ${branch} ${repoUrl} ${workDir}`);
+    const commitSha = (await run("git rev-parse HEAD", workDir)).trim();
+    const imageTag = repoName.toLowerCase() + commitSha.substring(0, 7);
 
     await generateDockerfile(workDir);
 
     await prisma.deployment.update({
       where: { id: deployment.id },
-      data: { status: "BUILDING" },
+      data: { status: "BUILDING", commitSha: commitSha },
     });
 
-    const imageTag = `containerops:${deployment.id}`;
     await run(`docker build -t ${imageTag} .`, workDir);
 
     const port = 3000 + Math.floor(Math.random() * 1000);
     const containerId = await run(
       `docker run -d -p ${port}:3000 ${imageTag}`
     );
+
+    await prisma.container.create({
+      data: {
+        dockerContainerId: containerId.trim(),
+        port: port,
+        status: "RUNNING",
+        startedAt: new Date(),
+        deployment: {
+          connect: {
+            id: deployment.id,
+          }
+        },
+      },
+    });
 
     return await prisma.deployment.update({
       where: { id: deployment.id },
@@ -65,6 +81,7 @@ exports.deployFromPublicRepo = async ({ repoUrl, branch }) => {
     throw err;
   }
 };
+
 
 function run(cmd, cwd) {
   return new Promise((resolve, reject) => {

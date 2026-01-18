@@ -24,6 +24,7 @@ exports.getDeploymentById = async (req, res) => {
     where: { id: req.params.id },
     include: {
       repository: true,
+      containers: true,
     },
   });
 
@@ -39,12 +40,12 @@ exports.listDeployments = async (req, res) => {
     orderBy: { createdAt: "desc" },
     include: {
       repository: true,
+      containers: true,
     },
   });
 
   res.json(deployments);
 };
-
 
 exports.deleteDeployment = async (req, res) => {
   const { id } = req.params;
@@ -59,3 +60,4 @@ exports.deleteDeployment = async (req, res) => {
 
   return res.status(200).json({ message: "Deployment deleted" });
 };
+
