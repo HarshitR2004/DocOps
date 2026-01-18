@@ -1,5 +1,7 @@
 const { prisma } = require("../config/prisma.config");
 const dockerService = require("../services/docker.service");
+const { getRuntimeLogStream } = require("../utils/logWriter");
+
 
 module.exports = (io) => {
   io.on("connection", (socket) => {
@@ -16,10 +18,15 @@ module.exports = (io) => {
         return;
       }
 
+      const runtimeLogStream = getRuntimeLogStream(deploymentId);
+
       dockerService.streamContainerLogs(
         deployment.containerId,
-        (logLine) => {
-          socket.emit("logs", logLine);
+        {
+          logStream: runtimeLogStream,
+          onLog: (log) => {
+            socket.emit("logs", log);
+          },
         }
       );
     });

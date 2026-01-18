@@ -4,16 +4,23 @@ const { prisma } = require("../config/prisma.config");
 
 
 exports.deployPublicRepo = async (req, res) => {
-  const { repoUrl, branch = "main" } = req.body;
+  const { repoUrl, branch = "main", port } = req.body;
 
   if (!repoUrl) {
     return res.status(400).json({ error: "repoUrl is required" });
+  }
+
+  if (!port){
+    return res.status(400).json({
+      error: "exposed port is required"
+    })
   }
 
   try {
       const deployment = await deployService.initiateDeployment({
         repoUrl,
         branch,
+        port,
       });
 
       res.status(202).json({
@@ -101,4 +108,6 @@ exports.stopDeployment = async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 };
+
+
 

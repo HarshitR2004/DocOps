@@ -44,7 +44,7 @@ model Deployment {
   status       String // PENDING | BUILDING | RUNNING | FAILED | STOPPED
   imageTag     String?
   containerId  String? 
-  exposedPort  Int?
+  exposedPort  Int
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

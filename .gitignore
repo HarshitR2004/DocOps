@@ -38,3 +38,4 @@ tmp/
 temp/
 .venv/
 ai-service/
+logs/

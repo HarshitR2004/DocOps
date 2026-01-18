@@ -1,7 +1,7 @@
-import React from 'react'
+import { deployService } from '../../services/deployService'
+import { useState } from 'react'
 import clsx from 'clsx'
 import { getStatusColor, formatDate } from '../../utils/deploymentUtils'
-import ContainerList from './ContainerList'
 
 const DeploymentItem = ({ 
   deployment, 
@@ -10,6 +10,34 @@ const DeploymentItem = ({
   onViewLogs,
   onRefresh
 }) => {
+  const [isToggling, setIsToggling] = useState(false);
+
+  const handleStart = async () => {
+      try {
+          setIsToggling(true);
+          await deployService.startDeployment(deployment.id);
+          onRefresh();
+      } catch (e) {
+          console.error(e);
+          alert("Failed to start: " + e.message);
+      } finally {
+          setIsToggling(false);
+      }
+  };
+
+  const handleStop = async () => {
+      try {
+          setIsToggling(true);
+          await deployService.stopDeployment(deployment.id);
+          onRefresh();
+      } catch (e) {
+           console.error(e);
+           alert("Failed to stop: " + e.message);
+      } finally {
+          setIsToggling(false);
+      }
+  };
+
   return (
     <div className="glass-panel tech-border p-5 rounded-md hover:bg-surface-hover transition-colors group">
       <div className="flex items-start justify-between">
@@ -45,25 +73,49 @@ const DeploymentItem = ({
         </div>
 
         <div className="flex items-start gap-2">
-           {(deployment.status === 'RUNNING' || deployment.status === 'BUILDING') && (
+           {(deployment.status === 'RUNNING' || deployment.status === 'BUILDING' || deployment.status === 'STOPPED') && (
             <button
               onClick={() => onViewLogs(deployment.id, deployment.status === 'BUILDING' ? 'build' : 'runtime')}
               className="px-3 py-1.5 text-xs font-mono uppercase border border-secondary/30 text-secondary hover:border-primary hover:text-primary transition-all rounded-sm"
             >
-              System Logs
+              Logs
             </button>
           )}
 
-          {deployment.status === 'RUNNING' && deployment.exposedPort && (
-            <a
-              href={`http://localhost:${deployment.exposedPort}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-3 py-1.5 text-xs font-mono uppercase bg-primary/10 border border-primary text-primary hover:bg-primary/20 transition-all rounded-sm flex items-center gap-2"
-            >
-              <span>Launch</span>
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
-            </a>
+          {deployment.status === 'STOPPED' && (
+              <button
+                  onClick={handleStart}
+                  disabled={isToggling}
+                  className="px-3 py-1.5 text-xs font-mono uppercase bg-success/10 border border-success text-success hover:bg-success/20 transition-all rounded-sm flex items-center gap-2 disabled:opacity-50"
+              >
+                  {isToggling ? 'Starting...' : 'Start'}
+                  {!isToggling && <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
+              </button>
+          )}
+
+          {deployment.status === 'RUNNING' && (
+              <>
+                <button
+                    onClick={handleStop}
+                    disabled={isToggling}
+                    className="px-3 py-1.5 text-xs font-mono uppercase bg-warning/10 border border-warning text-warning hover:bg-warning/20 transition-all rounded-sm flex items-center gap-2 disabled:opacity-50"
+                >
+                    {isToggling ? 'Stopping...' : 'Stop'}
+                    {!isToggling && <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
+                </button>
+                
+                {deployment.exposedPort && (
+                    <a
+                    href={`http://localhost:${deployment.exposedPort}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-3 py-1.5 text-xs font-mono uppercase bg-primary/10 border border-primary text-primary hover:bg-primary/20 transition-all rounded-sm flex items-center gap-2"
+                    >
+                    <span>Launch</span>
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                    </a>
+                )}
+              </>
           )}
           
           <button

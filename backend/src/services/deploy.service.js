@@ -3,11 +3,18 @@ const path = require("path");
 const { exec } = require("child_process");
 const generateDockerfile = require("../utils/docker_generator");
 const ioManager = require("../sockets/io");
+
 const dockerService = require("../services/docker.service");
+const fs = require('fs');
+
+const {
+  getBuildLogStream,
+  getRuntimeLogStream,
+} = require("../utils/logWriter");
 
 
 
-exports.initiateDeployment = async ({ repoUrl, branch }) => {
+exports.initiateDeployment = async ({ repoUrl, branch, port }) => {
     const [, , , owner, repoName] = repoUrl.split("/");
     const fullName = `${owner}/${repoName.replace(".git", "")}`;
 
@@ -26,6 +33,7 @@ exports.initiateDeployment = async ({ repoUrl, branch }) => {
       data: {
         repositoryId: repository.id,
         branch,
+        exposedPort: port,
         commitSha: "UNKNOWN",
         status: "PENDING",
       },
@@ -41,6 +49,7 @@ exports.processDeployment = async (deployment) => {
   const repoUrl = deployment.repository.cloneUrl;
   const branch = deployment.branch;
   const repoName = deployment.repository.name;
+  const port = deployment.exposedPort;
 
   try {
     await run(`git clone -b ${branch} ${repoUrl} ${workDir}`);
@@ -54,15 +63,17 @@ exports.processDeployment = async (deployment) => {
       data: { status: "BUILDING", commitSha: commitSha },
     });
 
+    const buildLogStream = getBuildLogStream(deployment.id);
+
     await dockerService.buildImage({
           imageTag,
           contextDir: workDir,
+          logStream: buildLogStream,
           onLog: (log) => {
             ioManager.get().to(`build-${deployment.id}`).emit("build-logs", log);
           },
     });
 
-    const port = 3000 + Math.floor(Math.random() * 1000);
     const containerId = await run(
       `docker run -d -p ${port}:3000 ${imageTag}`
     );
@@ -112,6 +123,20 @@ exports.deleteDeployment = async (deploymentId) => {
     } catch (e) {
         console.warn("Failed to remove docker container:", e.message);
     }
+  }
+
+
+
+  // Delete logs
+  try {
+      let baseDir = process.env.BASE_LOG_DIR || "";
+      baseDir = baseDir.replace(/^"|"$/g, '');
+      const logDir = path.join(baseDir, deploymentId);
+      if (fs.existsSync(logDir)) {
+          await fs.promises.rm(logDir, { recursive: true, force: true });
+      }
+  } catch (e) {
+      console.warn("Failed to delete deployment logs:", e.message);
   }
 
   // Database deletion (cascades to container)
@@ -169,6 +194,10 @@ exports.stopDeployment = async (deploymentId) => {
         include: { container: true }
     });
 };
+
+
+
+
 
 
 function run(cmd, cwd) {

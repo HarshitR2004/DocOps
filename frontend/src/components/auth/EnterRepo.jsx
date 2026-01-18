@@ -18,6 +18,8 @@ const EnterRepo = ({ onDeploymentStart }) => {
     setRepoUrl,
     branch,
     setBranch,
+    port,
+    setPort,
     loading,
     error,
     success,
@@ -67,6 +69,27 @@ const EnterRepo = ({ onDeploymentStart }) => {
                 value={branch}
                 onChange={(e) => setBranch(e.target.value)}
                 placeholder="main"
+                disabled={loading}
+                className={clsx(
+                    'block w-full rounded-sm bg-black/50 border border-border pl-8 pr-3 py-3 text-sm font-mono text-text-primary placeholder:text-dim',
+                    'focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 transition-all',
+                    'disabled:opacity-50 disabled:cursor-not-allowed'
+                )}
+                />
+            </div>
+          </Field>
+
+          <Field className="group">
+            <Label className="text-xs font-mono font-bold text-dim uppercase mb-1 block group-focus-within:text-primary transition-colors">
+               // EXPOSED_PORT
+            </Label>
+            <div className="relative flex items-center">
+                 <span className="absolute left-3 text-secondary font-mono text-sm">:</span>
+                <Input
+                type="number"
+                value={port}
+                onChange={(e) => setPort(e.target.value)}
+                placeholder="3000"
                 disabled={loading}
                 className={clsx(
                     'block w-full rounded-sm bg-black/50 border border-border pl-8 pr-3 py-3 text-sm font-mono text-text-primary placeholder:text-dim',

@@ -4,6 +4,7 @@ import { deployService } from '../services/deployService'
 export const useDeployForm = (onDeploymentStart) => {
   const [repoUrl, setRepoUrl] = useState('')
   const [branch, setBranch] = useState('main')
+  const [port, setPort] = useState('3000')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(null)
@@ -27,10 +28,15 @@ export const useDeployForm = (onDeploymentStart) => {
         throw new Error('Please enter a valid GitHub repository URL')
       }
 
+      if (!port) {
+        throw new Error('Port is required')
+      }
+
       // Call deploy service
       const response = await deployService.deployPublicRepo({
         repoUrl: repoUrl.trim(),
-        branch: branch.trim() || 'main'
+        branch: branch.trim() || 'main',
+        port: parseInt(port)
       })
 
       setSuccess(`Deployment started! ID: ${response.deploymentId}`)
@@ -43,6 +49,7 @@ export const useDeployForm = (onDeploymentStart) => {
       // Reset form
       setRepoUrl('')
       setBranch('main')
+      setPort('3000')
     } catch (err) {
       setError(err.message)
     } finally {
@@ -55,6 +62,8 @@ export const useDeployForm = (onDeploymentStart) => {
     setRepoUrl,
     branch,
     setBranch,
+    port,
+    setPort,
     loading,
     error,
     success,

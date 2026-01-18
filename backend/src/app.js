@@ -46,6 +46,11 @@ app.use(passport.session());
 app.use("/auth", authRoutes);
 app.use("/deploy", deployRoutes);
 
+// Static Logs
+let baseLogDir = process.env.BASE_LOG_DIR || "logs";
+baseLogDir = baseLogDir.replace(/^"|"$/g, '');
+app.use("/logs", express.static(baseLogDir));
+
 app.get("/auth/user", (req, res) => {
   if (req.user) {
     return res.json({ isAuthenticated: true, user: req.user });
