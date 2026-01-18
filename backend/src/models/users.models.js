@@ -1,4 +1,4 @@
-const { prisma } = require("../db/prisma");
+const { prisma } = require("../config/prisma.config");
 
 const findUserByGithubId = async (githubId) => {
   return await prisma.user.findUnique({

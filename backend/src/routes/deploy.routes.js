@@ -9,4 +9,6 @@ router.get("/:id", deployController.getDeploymentById);
 
 router.get("/", deployController.listDeployments);
 
+router.delete("/:id", deployController.deleteDeployment);
+
 module.exports = router;

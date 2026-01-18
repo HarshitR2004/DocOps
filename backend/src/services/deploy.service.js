@@ -1,4 +1,4 @@
-const { prisma } = require("../db/prisma");
+const { prisma } = require("../config/prisma.config");
 const path = require("path");
 const { exec } = require("child_process");
 const generateDockerfile = require("../utils/docker_generator");

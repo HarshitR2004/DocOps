@@ -1,5 +1,5 @@
 const deployService = require("../services/deploy.service");
-const { prisma } = require("../db/prisma");
+const { prisma } = require("../config/prisma.config");
 
 exports.deployPublicRepo = async (req, res) => {
   const { repoUrl, branch = "main" } = req.body;
@@ -43,4 +43,19 @@ exports.listDeployments = async (req, res) => {
   });
 
   res.json(deployments);
+};
+
+
+exports.deleteDeployment = async (req, res) => {
+  const { id } = req.params;
+
+  if (!id) {
+    return res.status(400).json({ error: "Deployment id is required" });
+  }
+
+  await prisma.deployment.delete({
+    where: { id },
+  });
+
+  return res.status(200).json({ message: "Deployment deleted" });
 };
