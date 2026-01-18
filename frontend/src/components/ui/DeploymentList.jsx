@@ -6,7 +6,7 @@ import clsx from 'clsx'
 /**
  * Component to display a list of deployments
  */
-const DeploymentList = ({ refreshTrigger }) => {
+const DeploymentList = ({ refreshTrigger, onViewLogs }) => {
   const [deployments, setDeployments] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -216,6 +216,14 @@ const DeploymentList = ({ refreshTrigger }) => {
               >
                 {deletingId === deployment.id ? 'Deleting...' : 'Delete'}
               </button>
+              {deployment.status === 'RUNNING' && (
+                <button
+                  onClick={() => onViewLogs(deployment.id)}
+                  className="ml-3 px-3 py-1 text-sm bg-gray-800 text-white rounded-md hover:bg-gray-900 transition-colors dark:bg-gray-600 dark:hover:bg-gray-500"
+                >
+                  Logs
+                </button>
+              )}
             </div>
 
             {deployment.repository?.fullName && (
