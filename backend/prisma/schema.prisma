@@ -29,8 +29,9 @@ model Repository {
   webhookId     BigInt
   createdAt     DateTime @default(now())
 
-  user        User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
   deployments Deployment[]
+
 
   @@index([userId])
 }
@@ -40,25 +41,25 @@ model Deployment {
   repositoryId String
   branch       String
   commitSha    String
-  status       String // PENDING | BUILDING | RUNNING | FAILED
+  status       String // PENDING | BUILDING | RUNNING | FAILED | STOPPED
   imageTag     String?
-  containerId  String?
+  containerId  String? 
   exposedPort  Int?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  repository Repository  @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
-  containers Container[]
+  repository Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  container  Container? 
 
   @@index([repositoryId])
 }
 
 model Container {
   id                String    @id @default(uuid())
-  deploymentId      String
+  deploymentId      String    @unique
   dockerContainerId String
   port              Int
-  status            String
+  status            String // RUNNING | STOPPED
   startedAt         DateTime
   stoppedAt         DateTime?
 

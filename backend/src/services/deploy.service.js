@@ -2,7 +2,6 @@ const { prisma } = require("../config/prisma.config");
 const path = require("path");
 const { exec } = require("child_process");
 const generateDockerfile = require("../utils/docker_generator");
-const { connect } = require("http2");
 
 exports.deployFromPublicRepo = async ({ repoUrl, branch }) => {
   const [, , , owner, repoName] = repoUrl.split("/");
@@ -49,17 +48,14 @@ exports.deployFromPublicRepo = async ({ repoUrl, branch }) => {
       `docker run -d -p ${port}:3000 ${imageTag}`
     );
 
+    // Create container linked to deployment
     await prisma.container.create({
       data: {
         dockerContainerId: containerId.trim(),
         port: port,
         status: "RUNNING",
         startedAt: new Date(),
-        deployment: {
-          connect: {
-            id: deployment.id,
-          }
-        },
+        deploymentId: deployment.id,
       },
     });
 
@@ -68,9 +64,12 @@ exports.deployFromPublicRepo = async ({ repoUrl, branch }) => {
       data: {
         status: "RUNNING",
         imageTag,
-        containerId: containerId.trim(),
+        containerId: containerId.trim(), // Keep this for redudancy or legacy if schema has it, but schema has `containerId` string field? Schema has `containerId String?` and `container Container?`.
         exposedPort: port,
       },
+      include: {
+        container: true
+      }
     });
   } catch (err) {
     await prisma.deployment.update({
@@ -80,6 +79,78 @@ exports.deployFromPublicRepo = async ({ repoUrl, branch }) => {
 
     throw err;
   }
+};
+
+exports.deleteDeployment = async (deploymentId) => {
+  const deployment = await prisma.deployment.findUnique({
+    where: { id: deploymentId },
+    include: { container: true },
+  });
+
+  if (!deployment) throw new Error("Deployment not found");
+
+  if (deployment.container && deployment.container.dockerContainerId) {
+    try {
+        await run(`docker rm -f ${deployment.container.dockerContainerId}`);
+    } catch (e) {
+        console.warn("Failed to remove docker container:", e.message);
+    }
+  }
+
+  // Database deletion (cascades to container)
+  return prisma.deployment.delete({
+    where: { id: deploymentId },
+  });
+};
+
+exports.startDeployment = async (deploymentId) => {
+    const deployment = await prisma.deployment.findUnique({
+        where: { id: deploymentId },
+        include: { container: true }
+    });
+    
+    if (!deployment || !deployment.container) throw new Error("Deployment or container not found");
+
+    if (deployment.status === 'RUNNING') return deployment;
+
+    await run(`docker start ${deployment.container.dockerContainerId}`);
+
+    // Update both
+    await prisma.container.update({
+        where: { id: deployment.container.id },
+        data: { status: 'RUNNING', startedAt: new Date(), stoppedAt: null }
+    });
+
+    return prisma.deployment.update({
+        where: { id: deploymentId },
+        data: { status: 'RUNNING' },
+        include: { container: true }
+    });
+};
+
+exports.stopDeployment = async (deploymentId) => {
+    const deployment = await prisma.deployment.findUnique({
+        where: { id: deploymentId },
+        include: { container: true }
+    });
+
+    if (!deployment || !deployment.container) throw new Error("Deployment or container not found");
+
+    if (deployment.status === 'STOPPED') return deployment;
+
+    await run(`docker stop ${deployment.container.dockerContainerId}`);
+
+    // Update both
+    await prisma.container.update({
+        where: { id: deployment.container.id },
+        data: { status: 'STOPPED', stoppedAt: new Date() }
+    });
+
+    return prisma.deployment.update({
+        where: { id: deploymentId },
+        data: { status: 'STOPPED' },
+        include: { container: true }
+    });
 };
 
 

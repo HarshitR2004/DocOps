@@ -11,4 +11,7 @@ router.get("/", deployController.listDeployments);
 
 router.delete("/:id", deployController.deleteDeployment);
 
+router.post("/:id/start", deployController.startDeployment);
+router.post("/:id/stop", deployController.stopDeployment);
+
 module.exports = router;

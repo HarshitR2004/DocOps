@@ -8,15 +8,19 @@ exports.deployPublicRepo = async (req, res) => {
     return res.status(400).json({ error: "repoUrl is required" });
   }
 
-  const deployment = await deployService.deployFromPublicRepo({
-    repoUrl,
-    branch,
-  });
+  try {
+      const deployment = await deployService.deployFromPublicRepo({
+        repoUrl,
+        branch,
+      });
 
-  res.status(202).json({
-    message: "Deployment started",
-    deploymentId: deployment.id,
-  });
+      res.status(202).json({
+        message: "Deployment started",
+        deploymentId: deployment.id,
+      });
+  } catch(e) {
+      res.status(500).json({ error: e.message });
+  }
 };
 
 exports.getDeploymentById = async (req, res) => {
@@ -24,7 +28,7 @@ exports.getDeploymentById = async (req, res) => {
     where: { id: req.params.id },
     include: {
       repository: true,
-      containers: true,
+      container: true,
     },
   });
 
@@ -40,7 +44,7 @@ exports.listDeployments = async (req, res) => {
     orderBy: { createdAt: "desc" },
     include: {
       repository: true,
-      containers: true,
+      container: true,
     },
   });
 
@@ -54,10 +58,31 @@ exports.deleteDeployment = async (req, res) => {
     return res.status(400).json({ error: "Deployment id is required" });
   }
 
-  await prisma.deployment.delete({
-    where: { id },
-  });
+  try {
+      await deployService.deleteDeployment(id);
+      return res.status(200).json({ message: "Deployment deleted" });
+  } catch (err) {
+      return res.status(500).json({ error: err.message });
+  }
+};
 
-  return res.status(200).json({ message: "Deployment deleted" });
+exports.startDeployment = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const deployment = await deployService.startDeployment(id);
+        res.json({ message: "Deployment started", deployment });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+exports.stopDeployment = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const deployment = await deployService.stopDeployment(id);
+        res.json({ message: "Deployment stopped", deployment });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 };
 

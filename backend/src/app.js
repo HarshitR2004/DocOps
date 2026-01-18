@@ -4,7 +4,6 @@ const passport = require("./config/passport");
 
 const authRoutes = require("./routes/auth.routes");
 const deployRoutes = require("./routes/deploy.routes");
-const containerRoutes = require("./routes/container.routes");
 
 const app = express();
 
@@ -46,7 +45,6 @@ app.use(passport.session());
 
 app.use("/auth", authRoutes);
 app.use("/deploy", deployRoutes);
-app.use("/container", containerRoutes);
 
 app.get("/auth/user", (req, res) => {
   if (req.user) {
