@@ -1,29 +1,24 @@
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import DeploymentItem from './DeploymentItem'
-import { useDeployments } from '../../hooks/useDeployments'
+import { useDeployments } from '../../../hooks/useDeployments' // still needed for delete action
 import { useNavigate } from 'react-router-dom'
-import ConfirmModal from './ConfirmModal'
+import ConfirmModal from '../../common/ConfirmModal'
+import { LayoutGrid, List as ListIcon } from 'lucide-react'
 
 /**
  * Component to display a list of deployments
  */
-const DeploymentList = ({ refreshTrigger }) => {
+const DeploymentList = ({ deployments = [], loading, onRefresh }) => {
   const navigate = useNavigate()
   const {
-    deployments,
-    loading,
     error,
     deletingId,
-    fetchDeployments,
     deleteDeployment
   } = useDeployments()
 
   const [deploymentToDelete, setDeploymentToDelete] = useState(null)
+  const [viewMode, setViewMode] = useState('grid') // 'grid' or 'list'
 
-  useEffect(() => {
-    fetchDeployments()
-  }, [refreshTrigger, fetchDeployments])
-  
   const handleView = (deploymentId) => {
     navigate(`/deployment/${deploymentId}`)
   }
@@ -36,6 +31,7 @@ const DeploymentList = ({ refreshTrigger }) => {
     if (deploymentToDelete) {
       await deleteDeployment(deploymentToDelete)
       setDeploymentToDelete(null)
+      if (onRefresh) onRefresh()
     }
   }
 
@@ -60,8 +56,9 @@ const DeploymentList = ({ refreshTrigger }) => {
 
   if (deployments.length === 0) {
     return (
-      <div className="glass-panel p-8 rounded-lg text-center">
-        <p className="text-secondary font-mono">No active deployments found initialization pending...</p>
+      <div className="glass-panel p-12 rounded-lg text-center border-dashed border-2 border-white/10">
+        <div className="text-secondary font-mono mb-4 text-4xl opacity-20">NULL</div>
+        <p className="text-secondary font-mono">No active deployments found. Initialize one to begin.</p>
       </div>
     )
   }
@@ -69,19 +66,22 @@ const DeploymentList = ({ refreshTrigger }) => {
   return (
     <>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h3 className="text-xl font-bold text-primary font-mono tracking-wider uppercase">
-            Active Modules
-          </h3>
-          <button
-            onClick={fetchDeployments}
-            className="text-xs font-mono text-secondary hover:text-primary transition-colors flex items-center gap-2"
-          >
-            <span>[ REFRESH DATA ]</span>
-          </button>
+        <div className="flex items-center justify-end gap-2 mb-4">
+             <button 
+                onClick={() => setViewMode('grid')}
+                className={`p-2 rounded-sm transition-colors ${viewMode === 'grid' ? 'bg-primary/20 text-primary' : 'text-dim hover:text-white'}`}
+             >
+                 <LayoutGrid size={16} />
+             </button>
+             <button 
+                onClick={() => setViewMode('list')}
+                className={`p-2 rounded-sm transition-colors ${viewMode === 'list' ? 'bg-primary/20 text-primary' : 'text-dim hover:text-white'}`}
+             >
+                 <ListIcon size={16} />
+             </button>
         </div>
 
-        <div className="grid gap-4">
+        <div className={viewMode === 'grid' ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" : "flex flex-col gap-4"}>
           {deployments.map((deployment, index) => (
             <div key={deployment.id} className={`animate-enter delay-${Math.min(index * 100, 500)}`}>
               <DeploymentItem
@@ -89,7 +89,8 @@ const DeploymentList = ({ refreshTrigger }) => {
                   onDelete={() => confirmDelete(deployment)}
                   isDeleting={deletingId === deployment.id}
                   onViewLogs={handleView}
-                  onRefresh={fetchDeployments}
+                  onRefresh={onRefresh}
+                  viewMode={viewMode}
               />
             </div>
           ))}
@@ -101,7 +102,7 @@ const DeploymentList = ({ refreshTrigger }) => {
         onClose={() => setDeploymentToDelete(null)}
         onConfirm={handleDelete}
         title="Confirm Termination"
-        message="Are you sure you want to terminate this deployment? This action will stop all running containers and permanently remove configuration data. This action cannot be reversed."
+        message="Are you sure you want to terminate this deployment? This action will stop all running containers and permanently remove configuration data."
         isLoading={!!deletingId}
       />
     </>

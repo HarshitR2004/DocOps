@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
-import GithubService from "../services/github.service";
+import { useAuth } from "../../context/AuthContext";
+import GithubService from "../../services/github.service";
 import { Github, Folder, Star, GitBranch, ArrowRight, Loader2 } from "lucide-react";
 
 const GithubReposPage = () => {

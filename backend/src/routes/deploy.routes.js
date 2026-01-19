@@ -5,6 +5,7 @@ const deployController = require("../controllers/deploy.controller");
 
 router.post("/", deployController.deployPublicRepo);
 router.get("/:id", deployController.getDeploymentById);
+router.put("/:id", deployController.redeployDeployment);
 
 router.get("/", deployController.listDeployments);
 

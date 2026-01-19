@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-:root {
+@theme {
   /* Fonts */
   --font-sans: 'Space Grotesk', system-ui, -apple-system, sans-serif;
   --font-mono: 'Space Mono', monospace;
@@ -13,20 +13,18 @@
 
   /* Accents */
   --color-primary: #00f0ff;
-  /* Electric Cyan */
   --color-primary-dim: #00f0ff20;
   --color-success: #0aff60;
-  /* Matrix Green */
   --color-warning: #ffb800;
-  /* Amber */
   --color-danger: #ff003c;
-  /* Cyber Red */
 
   /* Text */
   --color-text-primary: #f0f0f0;
   --color-text-secondary: #a0a0a0;
   --color-text-dim: #505050;
+}
 
+:root {
   font-family: var(--font-sans);
   line-height: 1.5;
   font-weight: 400;

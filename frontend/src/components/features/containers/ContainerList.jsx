@@ -1,6 +1,6 @@
 import React from 'react'
 import ContainerItem from './ContainerItem'
-import { useContainerActions } from '../../hooks/useContainerActions'
+import { useContainerActions } from '../../../hooks/useContainerActions'
 
 const ContainerList = ({ containers, onRefresh }) => {
   const {

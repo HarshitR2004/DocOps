@@ -1,22 +1,27 @@
-import React, { useState } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
-import DeploymentList from "../components/ui/DeploymentList";
-import { useAuth } from "../context/AuthContext";
+import EnterRepo from "../../components/auth/EnterRepo";
+import { useAuth } from "../../context/AuthContext";
 
-const DeploymentsListPage = () => {
+const DeployFromUrlPage = () => {
   const navigate = useNavigate();
   const { logout } = useAuth();
-  const [refreshTrigger] = useState(0);
+
+  const handleDeploymentStart = (response) => {
+    // Navigate to the deployment details or list after start if needed
+    // But EnterRepo handles navigation to deployment details on success usually (based on previous code)
+    // Checking EnterRepo code... it does navigate to `/deployment/${response.deploymentId}`
+  };
 
   return (
     <div className="min-h-screen w-full flex flex-col items-center justify-start px-4 py-12 gap-12 relative">
-      {/* Top Navigation */}
+       {/* Top Navigation */}
        <div className="w-full max-w-[1600px] flex justify-between items-center absolute top-6 px-6">
             <button 
-                onClick={() => navigate('/')} 
+                onClick={() => navigate('/new-deployment')} 
                 className="hover:text-primary transition-colors flex items-center gap-1 text-xs font-mono text-dim uppercase tracking-wider"
             >
-                <span>&lt;</span> RETURN_HOME
+                <span>&lt;</span> BACK_TO_SELECTION
             </button>
 
             <button 
@@ -31,21 +36,19 @@ const DeploymentsListPage = () => {
       {/* Hero / Header */}
       <div className="text-center space-y-2 animate-enter mt-12">
             <h1 className="text-3xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-500 tracking-tighter uppercase font-mono">
-                Active<span className="text-primary">_Operations</span>
+                Initialize<span className="text-primary">_Deployment</span>
             </h1>
             <p className="text-secondary font-mono text-xs md:text-sm tracking-widest uppercase">
-                Monitor Running Containers
+                Configure New Container Instance from Public URL
             </p>
       </div>
 
-      {/* Deployments List Section */}
-      <div className="w-full max-w-5xl animate-enter delay-200">
-          <DeploymentList 
-            refreshTrigger={refreshTrigger} 
-          />
+      {/* Deployment Form Section */}
+      <div className="w-full max-w-3xl animate-enter delay-100">
+          <EnterRepo onDeploymentStart={handleDeploymentStart} />
       </div>
     </div>
   );
 };
 
-export default DeploymentsListPage;
+export default DeployFromUrlPage;

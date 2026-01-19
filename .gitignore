@@ -28,6 +28,7 @@ coverage/
 prisma/dev.db
 prisma/*.db
 prisma/*.db-journal
+backend/prisma/prisma/dev.db
 
 .cache/
 .parcel-cache/

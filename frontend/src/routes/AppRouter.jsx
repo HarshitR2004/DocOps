@@ -5,13 +5,13 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
-import LoginPage from "../pages/LoginPage";
-import HomePage from "../pages/HomePage";
-import DeploymentPage from "../pages/DeploymentPage";
-import DeploymentSelectionPage from "../pages/DeploymentSelectionPage";
-import DeployFromUrlPage from "../pages/DeployFromUrlPage";
-import GithubReposPage from "../pages/GithubReposPage";
-import DeploymentsListPage from "../pages/DeploymentsListPage";
+import LoginPage from "../pages/auth/LoginPage";
+import HomePage from "../pages/dashboard/HomePage";
+import DeploymentPage from "../pages/deployments/DeploymentPage";
+import DeploymentSelectionPage from "../pages/deployments/DeploymentSelectionPage";
+import DeployFromUrlPage from "../pages/deployments/DeployFromUrlPage";
+import GithubReposPage from "../pages/deployments/GithubReposPage";
+import DeploymentsListPage from "../pages/deployments/DeploymentsListPage";
 import { useAuth } from "../context/AuthContext";
 
 const AppRouter = () => {

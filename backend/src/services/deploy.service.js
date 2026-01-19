@@ -3,7 +3,7 @@ const path = require("path");
 const { exec } = require("child_process");
 const generateDockerfile = require("../utils/docker_generator");
 const ioManager = require("../sockets/io");
-
+const buildType = require("../utils/detectBuilds");
 const dockerService = require("../services/docker.service");
 const fs = require('fs');
 
@@ -13,10 +13,26 @@ const {
 } = require("../utils/logWriter");
 
 
+const DEFAULTS = {
+    node: {
+        runtimeImage: 'node:18',
+        buildCommand: 'npm install',
+        startCommand: 'npm start'
+    },
+    python: {
+        runtimeImage: 'python:3.9',
+        buildCommand: 'pip install -r requirements.txt',
+        startCommand: 'python app.py'
+    }
+};
 
-exports.initiateDeployment = async ({ repoUrl, branch, port }) => {
+exports.initiateDeployment = async ({ repoUrl, branch, buildSpec }) => {
     const [, , , owner, repoName] = repoUrl.split("/");
     const fullName = `${owner}/${repoName.replace(".git", "")}`;
+
+    if (!buildSpec || !buildSpec.exposedPort) {
+        throw new Error("Invalid buildSpec: exposedPort is required");
+    }
 
     const repository = await prisma.repository.create({
       data: {
@@ -33,7 +49,8 @@ exports.initiateDeployment = async ({ repoUrl, branch, port }) => {
       data: {
         repositoryId: repository.id,
         branch,
-        exposedPort: port,
+        buildSpec: JSON.stringify(buildSpec),
+        exposedPort: buildSpec.exposedPort,
         commitSha: "UNKNOWN",
         status: "PENDING",
       },
@@ -42,21 +59,48 @@ exports.initiateDeployment = async ({ repoUrl, branch, port }) => {
     return deployment;
 }
 
-
-
 exports.processDeployment = async (deployment) => {
   const workDir = path.join("/tmp", deployment.id);
   const repoUrl = deployment.repository.cloneUrl;
   const branch = deployment.branch;
   const repoName = deployment.repository.name;
-  const port = deployment.exposedPort;
+  
+  let buildSpec = JSON.parse(deployment.buildSpec);
 
   try {
     await run(`git clone -b ${branch} ${repoUrl} ${workDir}`);
     const commitSha = (await run("git rev-parse HEAD", workDir)).trim();
     const imageTag = repoName.toLowerCase() + commitSha.substring(0, 7);
 
-    await generateDockerfile(workDir);
+    if (buildSpec.language === 'detect' || !buildSpec.runtimeImage) {
+        const detectedType = await buildType.detectBuildType(workDir);
+        
+        if (detectedType && DEFAULTS[detectedType]) {
+            const defaults = DEFAULTS[detectedType];
+            buildSpec = {
+                ...buildSpec,
+                language: detectedType,
+                runtimeImage: buildSpec.runtimeImage || defaults.runtimeImage,
+                buildCommand: buildSpec.buildCommand || defaults.buildCommand,
+                startCommand: buildSpec.startCommand || defaults.startCommand,
+            };
+            
+            await prisma.deployment.update({
+                where: { id: deployment.id },
+                data: { buildSpec: JSON.stringify(buildSpec) }
+            });
+        } else {
+            await prisma.deployment.update({
+                where: { id: deployment.id },
+                data: { status: "FAILED" },
+            });
+
+            throw new Error("Could not auto-detect project type");
+            
+        }
+    }
+
+    await generateDockerfile(workDir, buildSpec);
 
     await prisma.deployment.update({
       where: { id: deployment.id },
@@ -75,14 +119,13 @@ exports.processDeployment = async (deployment) => {
     });
 
     const containerId = await run(
-      `docker run -d -p ${port}:3000 ${imageTag}`
+      `docker run -d -p ${deployment.exposedPort}:${3000} ${imageTag}`
     );
 
-    // Create container linked to deployment
     await prisma.container.create({
       data: {
         dockerContainerId: containerId.trim(),
-        port: port,
+        port: deployment.exposedPort,
         status: "RUNNING",
         startedAt: new Date(),
         deploymentId: deployment.id,
@@ -95,7 +138,7 @@ exports.processDeployment = async (deployment) => {
         status: "RUNNING",
         imageTag,
         containerId: containerId.trim(),
-        exposedPort: port,
+        container: undefined, 
       },
     });
 
@@ -138,7 +181,6 @@ exports.deleteDeployment = async (deploymentId) => {
 
 
 
-  // Delete logs
   try {
       let baseDir = process.env.BASE_LOG_DIR || "";
       baseDir = baseDir.replace(/^"|"$/g, '');
@@ -150,7 +192,6 @@ exports.deleteDeployment = async (deploymentId) => {
       console.warn("Failed to delete deployment logs:", e.message);
   }
 
-  // Database deletion (cascades to container)
   return prisma.deployment.delete({
     where: { id: deploymentId },
   });
@@ -193,7 +234,6 @@ exports.stopDeployment = async (deploymentId) => {
 
     await run(`docker stop ${deployment.container.dockerContainerId}`);
 
-    // Update both
     await prisma.container.update({
         where: { id: deployment.container.id },
         data: { status: 'STOPPED', stoppedAt: new Date() }
@@ -209,6 +249,41 @@ exports.stopDeployment = async (deploymentId) => {
 
 
 
+
+
+exports.redeployDeployment = async (deploymentId, newBuildSpec) => {
+    const deployment = await prisma.deployment.findUnique({
+        where: { id: deploymentId },
+        include: { container: true, repository: true }
+    });
+
+    if (!deployment) throw new Error("Deployment not found");
+
+    if (deployment.container && deployment.container.dockerContainerId) {
+        try {
+           await run(`docker rm -f ${deployment.container.dockerContainerId}`);
+        } catch (e) {
+           console.warn("Failed to remove old container:", e.message);
+        }
+    }
+
+    const updatedDeployment = await prisma.deployment.update({
+        where: { id: deploymentId },
+        data: {
+            buildSpec: newBuildSpec ? JSON.stringify(newBuildSpec) : deployment.buildSpec,
+            exposedPort: newBuildSpec?.exposedPort ? String(newBuildSpec.exposedPort) : deployment.exposedPort,
+            status: "PENDING",
+            container: {
+                delete: deployment.container ? true : undefined
+            }
+        },
+        include: { repository: true }
+    });
+
+    this.processDeployment(updatedDeployment);
+
+    return updatedDeployment;
+};
 
 
 function run(cmd, cwd) {

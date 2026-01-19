@@ -1,6 +1,6 @@
 import React from 'react'
 import clsx from 'clsx'
-import { getStatusColor } from '../../utils/deploymentUtils'
+import { getStatusColor } from '../../../utils/deploymentUtils'
 
 const ContainerItem = ({ 
   container, 

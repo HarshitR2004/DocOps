@@ -21,7 +21,7 @@ model User {
 
 model Repository {
   id            String   @id @default(uuid())
-  userId        String?
+  userId        String?add
   githubRepoId  BigInt
   name          String
   fullName      String
@@ -42,6 +42,7 @@ model Deployment {
   repositoryId String
   branch       String
   commitSha    String
+  buildSpec    String
   status       String // PENDING | BUILDING | RUNNING | FAILED | STOPPED
   imageTag     String?
   containerId  String? 

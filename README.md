@@ -1,53 +1,33 @@
 # DocOps
 
-DocOps is a self-hosted Platform-as-a-Service (PaaS) that enables seamless deployment of web applications directly from GitHub repositories. It automates the entire containerization and deployment pipeline, allowing developers to focus on their code rather than infrastructure management.
+**DocOps** is a modern, self-hosted Platform-as-a-Service (PaaS) designed to streamline the deployment of web applications directly from GitHub. It abstracts away the complexity of infrastructure management, offering a developer-centric dashboard for automating containerization, deployment, and monitoring.
 
-## Overview
+## Key Features
 
-DocOps bridges the gap between your GitHub repository and a running Docker container by automating build processes, managing deployments, and providing real-time insights into application performance and logs.
 
-## Features
+### Seamless Deployment Pipeline
+*   **One-Click Deploy**: Launch any public or private GitHub repository instantly.
+*   **Auto-Detection**: Intelligent analysis of your repository to auto-configure Docker builds for Node.js, Python, and more.
+*   **Custom Build Specs**: Full control over build commands, runtime images, and exposed ports.
 
-### Deployment Management
+### Full Lifecycle Management
+*   **Container Control**: Start, stop, and terminate applications directly from the dashboard.
+*   **Hot Redeploy**: Reconfigure and redeploy applications with new settings without downtime.
+*   **Health Monitoring**: Continuous status tracking with visual health indicators.
 
-- Deploy any public or private GitHub repository with a single click
-- Support for multiple branches and custom port configurations
-- Automatic project type detection and intelligent Dockerfile generation
-- Streamlined deployment workflow from repository selection to live application
+### Real-Time Observability
+*   **Live Log Streaming**: Watch build processes and runtime logs stream in real-time via WebSocket.
+*   **Historical Logs**: Access past build logs for debugging and auditing.
 
-### Docker Integration
-
-- Automated Docker image building and containerization
-- Docker container lifecycle management including start, stop, and restart operations
-- Full container status monitoring and health checks
-- Seamless Docker registry integration
-
-### Real-Time Monitoring and Logging
-
-- Live build log streaming during deployment process
-- Real-time application runtime log viewer
-- WebSocket-based instant log updates without polling
-- Historical log retention for all deployments
-- Per-deployment log segregation for easy tracking
-
-### GitHub Integration
-
-- OAuth-based GitHub authentication
-- Browse and explore available GitHub repositories
-- Direct repository selection and branch management
-- Access control through GitHub credentials
-
-### Application Lifecycle Control
-
-- Start, stop, restart, and delete deployments on demand
-- Track deployment status and health metrics
-- Container resource monitoring
-- Deployment history and detailed deployment information
+### Secure & Integrated
+*   **GitHub OAuth**: Secure authentication and repository access.
+*   **Private Repos**: Full support for deploying from private organizations and repositories.
 
 ## Technology Stack
 
-- **Frontend**: React with Vite, Tailwind CSS, Lucide React icons, Socket.IO client
-- **Backend**: Node.js with Express.js, Socket.IO for real-time communication
-- **Database**: SQLite with Prisma ORM
-- **Authentication**: GitHub OAuth 2.0 with Passport.js
-- **Containerization**: Docker engine integration
+*   **Frontend**: React, Tailwind CSS
+*   **Backend**: Node.js, Express, Socket.IO
+*   **Database**: SQLite, Prisma
+*   **Infrastructure**: Docker
+
+

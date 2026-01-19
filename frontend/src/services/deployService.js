@@ -145,6 +145,30 @@ const deleteDeployment = async (deploymentId) => {
   return response.json();
 };
 
+/**
+ * Redeploy a deployment with updated config
+ * @param {string} deploymentId - Deployment ID
+ * @param {Object} buildSpec - New build specification
+ * @returns {Promise<Object>} Redeploy response
+ */
+const redeployDeployment = async (deploymentId, buildSpec) => {
+  const response = await fetch(`${BASE_URL}/deploy/${deploymentId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify({ buildSpec }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || "Failed to redeploy");
+  }
+
+  return response.json();
+};
+
 export const deployService = {
   deployPublicRepo,
   getDeploymentById,
@@ -153,4 +177,5 @@ export const deployService = {
   startDeployment,
   stopDeployment,
   deleteDeployment,
+  redeployDeployment,
 };

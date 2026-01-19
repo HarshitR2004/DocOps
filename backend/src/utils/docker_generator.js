@@ -1,18 +1,19 @@
 const fs = require("fs");
 const path = require("path");
 
-module.exports = async (repoPath) => {
+module.exports = async (repoPath, buildSpec) => {
   const dockerfile = path.join(repoPath, "Dockerfile");
   if (fs.existsSync(dockerfile)) return;
 
-  fs.writeFileSync(
-    dockerfile,
-`FROM node:18
+  const { runtimeImage, buildCommand, startCommand, exposedPort } = buildSpec;
+
+  const fileContent = `FROM ${runtimeImage}
 WORKDIR /app
-COPY package*.json ./
-RUN npm install
 COPY . .
-EXPOSE 3000
-CMD ["npm", "start"]
-`);
+RUN ${buildCommand}
+EXPOSE ${exposedPort}
+CMD ${startCommand}
+`;
+
+  fs.writeFileSync(dockerfile, fileContent);
 };

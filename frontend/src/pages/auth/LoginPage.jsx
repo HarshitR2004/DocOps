@@ -1,5 +1,5 @@
 import React from "react";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../../context/AuthContext";
 import clsx from 'clsx';
 
 const LoginPage = () => {
@@ -47,7 +47,7 @@ const LoginPage = () => {
                     onClick={login}
                     className={clsx(
                     'group w-full flex items-center justify-center gap-3 rounded-sm bg-primary/10 border border-primary px-4 py-4 text-sm font-mono font-bold uppercase text-primary tracking-wider transition-all',
-                    'hover:bg-primary hover:text-black hover:shadow-[0_0_20px_rgba(0,240,255,0.4)]',
+                    'hover:bg-primary/20 hover:shadow-[0_0_20px_rgba(0,240,255,0.4)]',
                     'active:scale-[0.98]'
                     )}
                 >
