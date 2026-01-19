@@ -1,7 +1,8 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import DeploymentItem from './DeploymentItem'
 import { useDeployments } from '../../hooks/useDeployments'
 import { useNavigate } from 'react-router-dom'
+import ConfirmModal from './ConfirmModal'
 
 /**
  * Component to display a list of deployments
@@ -17,12 +18,25 @@ const DeploymentList = ({ refreshTrigger }) => {
     deleteDeployment
   } = useDeployments()
 
+  const [deploymentToDelete, setDeploymentToDelete] = useState(null)
+
   useEffect(() => {
     fetchDeployments()
   }, [refreshTrigger, fetchDeployments])
   
   const handleView = (deploymentId) => {
     navigate(`/deployment/${deploymentId}`)
+  }
+
+  const confirmDelete = (deployment) => {
+    setDeploymentToDelete(deployment)
+  }
+
+  const handleDelete = async () => {
+    if (deploymentToDelete) {
+      await deleteDeployment(deploymentToDelete)
+      setDeploymentToDelete(null)
+    }
   }
 
   if (loading) {
@@ -53,33 +67,44 @@ const DeploymentList = ({ refreshTrigger }) => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-xl font-bold text-primary font-mono tracking-wider uppercase">
-          Active Modules
-        </h3>
-        <button
-          onClick={fetchDeployments}
-          className="text-xs font-mono text-secondary hover:text-primary transition-colors flex items-center gap-2"
-        >
-          <span>[ REFRESH DATA ]</span>
-        </button>
+    <>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h3 className="text-xl font-bold text-primary font-mono tracking-wider uppercase">
+            Active Modules
+          </h3>
+          <button
+            onClick={fetchDeployments}
+            className="text-xs font-mono text-secondary hover:text-primary transition-colors flex items-center gap-2"
+          >
+            <span>[ REFRESH DATA ]</span>
+          </button>
+        </div>
+
+        <div className="grid gap-4">
+          {deployments.map((deployment, index) => (
+            <div key={deployment.id} className={`animate-enter delay-${Math.min(index * 100, 500)}`}>
+              <DeploymentItem
+                  deployment={deployment}
+                  onDelete={() => confirmDelete(deployment)}
+                  isDeleting={deletingId === deployment.id}
+                  onViewLogs={handleView}
+                  onRefresh={fetchDeployments}
+              />
+            </div>
+          ))}
+        </div>
       </div>
 
-      <div className="grid gap-4">
-        {deployments.map((deployment, index) => (
-          <div key={deployment.id} className={`animate-enter delay-${Math.min(index * 100, 500)}`}>
-            <DeploymentItem
-                deployment={deployment}
-                onDelete={deleteDeployment}
-                isDeleting={deletingId === deployment.id}
-                onViewLogs={handleView}
-                onRefresh={fetchDeployments}
-            />
-          </div>
-        ))}
-      </div>
-    </div>
+      <ConfirmModal
+        isOpen={!!deploymentToDelete}
+        onClose={() => setDeploymentToDelete(null)}
+        onConfirm={handleDelete}
+        title="Confirm Termination"
+        message="Are you sure you want to terminate this deployment? This action will stop all running containers and permanently remove configuration data. This action cannot be reversed."
+        isLoading={!!deletingId}
+      />
+    </>
   )
 }
 

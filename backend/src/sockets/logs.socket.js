@@ -41,6 +41,11 @@ module.exports = (io) => {
       socket.join(`runtime-${deploymentId}`);
     });
 
+    // General Deployment Status Subscription
+    socket.on("subscribe-deployment-status", ({ deploymentId }) => {
+        socket.join(`deployment-${deploymentId}`);
+    });
+
     socket.on("disconnect", () => {
       console.log("Socket disconnected:", socket.id);
     });

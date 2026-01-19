@@ -43,6 +43,16 @@ class SocketService {
     });
   }
 
+  subscribeToStatus(deploymentId, callback) {
+    if (!this.socket) this.connect();
+
+    this.socket.emit("subscribe-deployment-status", { deploymentId });
+
+    this.socket.on("deployment-status", (statusData) => {
+        callback(statusData);
+    });
+  }
+
   unsubscribeFromLogs() {
     if (this.socket) {
       this.socket.off("logs");

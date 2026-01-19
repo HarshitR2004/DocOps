@@ -1,53 +1,53 @@
 # DocOps
 
-DocOps is a modern, self-hosted Platform-as-a-Service (PaaS) that simplifies the deployment of web applications directly from GitHub. Built with a focus on developer experience, it automates the Dockerization and orchestration of your projects.
+DocOps is a self-hosted Platform-as-a-Service (PaaS) that enables seamless deployment of web applications directly from GitHub repositories. It automates the entire containerization and deployment pipeline, allowing developers to focus on their code rather than infrastructure management.
+
+## Overview
+
+DocOps bridges the gap between your GitHub repository and a running Docker container by automating build processes, managing deployments, and providing real-time insights into application performance and logs.
 
 ## Features
 
--   **One-Click Deployment**: Deploy any GitHub repository.
--   **Automated Builds**: Automatically detects project types, generates Dockerfiles, and builds Docker images.
--   **Real-Time Monitoring**: Stream build logs and application runtime logs in real-time.
--   **Persistent Logging**: Access historical build and runtime logs for all your deployments.
--   **Lifecycle Management**: Start, stop, and delete deployments with ease.
+### Deployment Management
 
+- Deploy any public or private GitHub repository with a single click
+- Support for multiple branches and custom port configurations
+- Automatic project type detection and intelligent Dockerfile generation
+- Streamlined deployment workflow from repository selection to live application
 
-## Tech Stack
+### Docker Integration
 
--   **Frontend**: React
--   **Backend**: Node.js, Express.js, Socket.IO
--   **Database**: SQLite with Prisma ORM
+- Automated Docker image building and containerization
+- Docker container lifecycle management including start, stop, and restart operations
+- Full container status monitoring and health checks
+- Seamless Docker registry integration
 
-## Prerequisites
+### Real-Time Monitoring and Logging
 
--   Node.js (v18+)
--   Docker (Running and accessible)
--   Git
+- Live build log streaming during deployment process
+- Real-time application runtime log viewer
+- WebSocket-based instant log updates without polling
+- Historical log retention for all deployments
+- Per-deployment log segregation for easy tracking
 
-## Getting Started
+### GitHub Integration
 
-1.  **Clone the repository**
-    ```bash
-    git clone <repository-url>
-    cd DocOps
-    ```
+- OAuth-based GitHub authentication
+- Browse and explore available GitHub repositories
+- Direct repository selection and branch management
+- Access control through GitHub credentials
 
-2.  **Setup Backend**
-    ```bash
-    cd backend
-    npm install
-    npx prisma migrate dev
-    # Create .env file with GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, BASE_LOG_DIR, etc.
-    npm run dev
-    ```
+### Application Lifecycle Control
 
-3.  **Setup Frontend**
-    ```bash
-    cd frontend
-    npm install
-    npm run dev
-    ```
+- Start, stop, restart, and delete deployments on demand
+- Track deployment status and health metrics
+- Container resource monitoring
+- Deployment history and detailed deployment information
 
-4.  **Access the Platform**
-    Open `http://localhost:5173` in your browser.
+## Technology Stack
 
-
+- **Frontend**: React with Vite, Tailwind CSS, Lucide React icons, Socket.IO client
+- **Backend**: Node.js with Express.js, Socket.IO for real-time communication
+- **Database**: SQLite with Prisma ORM
+- **Authentication**: GitHub OAuth 2.0 with Passport.js
+- **Containerization**: Docker engine integration

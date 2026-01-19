@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useDeployment } from '../hooks/useDeployment'
 import DeploymentDetails from '../components/ui/DeploymentDetails'
 import LogViewer from '../components/ui/LogViewer'
+import { socketService } from '../services/socket'
 
 const DeploymentPage = () => {
   const { id } = useParams()
@@ -14,13 +15,26 @@ const DeploymentPage = () => {
 
   useEffect(() => {
     fetchDeployment()
-    // Poll for updates if status is transitional
+    
+    // Subscribe to status updates for real-time refresh
+    const handleStatusUpdate = (update) => {
+        if (update && update.deploymentId === id) {
+            fetchDeployment();
+        }
+    };
+    
+    socketService.subscribeToStatus(id, handleStatusUpdate);
+
+    // Poll for updates if status is transitional (backup)
     const interval = setInterval(() => {
         if (deployment && ['BUILDING', 'PENDING'].includes(deployment.status)) {
             fetchDeployment()
         }
     }, 5000)
-    return () => clearInterval(interval)
+    return () => {
+        clearInterval(interval);
+        // Clean up socket listener if needed or rely on component unmount
+    }
   }, [id, fetchDeployment, deployment?.status])
 
   if (loading && !deployment) {
@@ -75,13 +89,7 @@ const DeploymentPage = () => {
             <div className="lg:col-span-8 flex flex-col h-full min-h-[500px]">
                 <div className="glass-panel tech-border p-1 flex-1 flex flex-col relative overflow-hidden">
                      {/* Decorative Header for Log Panel */}
-                    <div className="absolute top-0 right-0 p-2 z-10">
-                        <div className="flex gap-1">
-                            <div className="w-1.5 h-1.5 bg-secondary rounded-full"></div>
-                            <div className="w-1.5 h-1.5 bg-secondary rounded-full"></div>
-                            <div className="w-1.5 h-1.5 bg-secondary rounded-full"></div>
-                        </div>
-                    </div>
+
                     
                     <LogViewer 
                         deploymentId={id} 

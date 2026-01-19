@@ -4,6 +4,7 @@ const passport = require("./config/passport");
 
 const authRoutes = require("./routes/auth.routes");
 const deployRoutes = require("./routes/deploy.routes");
+const githubRoutes = require("./routes/github.routes");
 
 const app = express();
 
@@ -45,6 +46,7 @@ app.use(passport.session());
 
 app.use("/auth", authRoutes);
 app.use("/deploy", deployRoutes);
+app.use("/github", githubRoutes);
 
 // Static Logs
 let baseLogDir = process.env.BASE_LOG_DIR || "logs";

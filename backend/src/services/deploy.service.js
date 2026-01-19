@@ -98,6 +98,12 @@ exports.processDeployment = async (deployment) => {
         exposedPort: port,
       },
     });
+
+    ioManager.get().to(`deployment-${deployment.id}`).emit("deployment-status", {
+        deploymentId: deployment.id,
+        status: "RUNNING"
+    });
+
   } catch (err) {
     console.error("Deployment failed:", err);
     await prisma.deployment.update({
@@ -106,6 +112,11 @@ exports.processDeployment = async (deployment) => {
     });
     
     ioManager.get().to(`build-${deployment.id}`).emit("build-logs", `\nDeployment Failed: ${err.message}\n`);
+    
+    ioManager.get().to(`deployment-${deployment.id}`).emit("deployment-status", {
+        deploymentId: deployment.id,
+        status: "FAILED"
+    });
   }
 };
 

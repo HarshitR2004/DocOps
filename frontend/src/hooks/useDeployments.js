@@ -22,11 +22,8 @@ export const useDeployments = () => {
   }, [])
 
   const deleteDeployment = async (deployment) => {
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this deployment and its container(s)? This cannot be undone."
-    )
-    if (!confirmed) return
-
+    // Confirmation is now handled by the UI component
+    
     try {
       setDeletingId(deployment.id)
       setError(null)

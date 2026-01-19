@@ -45,12 +45,7 @@ const StatusToggle = ({ deploymentId }) => {
 
     return (
         <div className="flex items-center gap-3">
-            <div className={clsx(
-                'px-2 py-0.5 text-[10px] uppercase font-bold tracking-wider border rounded-sm',
-                getStatusColor(status)
-            )}>
-                {status}
-            </div>
+
 
             {canToggle && (
                 <button

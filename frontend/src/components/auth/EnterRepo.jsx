@@ -2,10 +2,13 @@ import React from 'react'
 import { Field, Input, Button, Label } from '@headlessui/react'
 import clsx from 'clsx'
 import { useDeployForm } from '../../hooks/useDeployForm'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
+import { useEffect } from 'react'
 
 const EnterRepo = ({ onDeploymentStart }) => {
   const navigate = useNavigate()
+  const location = useLocation()
+  
   const handleSuccess = (response) => {
     if (onDeploymentStart) onDeploymentStart(response)
     if (response?.deploymentId) {
@@ -25,6 +28,12 @@ const EnterRepo = ({ onDeploymentStart }) => {
     success,
     handleSubmit
   } = useDeployForm(handleSuccess)
+
+  useEffect(() => {
+    if (location.state?.repoUrl) {
+      setRepoUrl(location.state.repoUrl)
+    }
+  }, [location.state, setRepoUrl])
 
   return (
     <div className="w-full max-w-2xl mx-auto">

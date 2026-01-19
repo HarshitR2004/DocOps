@@ -1,5 +1,12 @@
 const { prisma } = require("../config/prisma.config");
 
+const getGithubUsername = async (id) => {
+    const user = await prisma.user.findUnique({
+        where: { id },
+    });
+    return user.username;
+};
+
 const findUserByGithubId = async (githubId) => {
   return await prisma.user.findUnique({
     where: { githubId },
@@ -20,6 +27,7 @@ const updateUser = async (githubId, updateData) => {
 };
 
 module.exports = {
+  getGithubUsername,
   findUserByGithubId,
   createUser,
   updateUser,

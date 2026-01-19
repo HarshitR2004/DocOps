@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import EnterRepo from "../components/auth/EnterRepo";
 import { useAuth } from "../context/AuthContext";
 
-const NewDeploymentPage = () => {
+const DeployFromUrlPage = () => {
   const navigate = useNavigate();
   const { logout } = useAuth();
 
@@ -18,10 +18,10 @@ const NewDeploymentPage = () => {
        {/* Top Navigation */}
        <div className="w-full max-w-[1600px] flex justify-between items-center absolute top-6 px-6">
             <button 
-                onClick={() => navigate('/')} 
+                onClick={() => navigate('/new-deployment')} 
                 className="hover:text-primary transition-colors flex items-center gap-1 text-xs font-mono text-dim uppercase tracking-wider"
             >
-                <span>&lt;</span> RETURN_HOME
+                <span>&lt;</span> BACK_TO_SELECTION
             </button>
 
             <button 
@@ -39,7 +39,7 @@ const NewDeploymentPage = () => {
                 Initialize<span className="text-primary">_Deployment</span>
             </h1>
             <p className="text-secondary font-mono text-xs md:text-sm tracking-widest uppercase">
-                Configure New Container Instance
+                Configure New Container Instance from Public URL
             </p>
       </div>
 
@@ -51,4 +51,4 @@ const NewDeploymentPage = () => {
   );
 };
 
-export default NewDeploymentPage;
+export default DeployFromUrlPage;
