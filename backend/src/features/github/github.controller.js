@@ -11,3 +11,24 @@ exports.getGithubRepos = async (req, res) => {
     }
 }
 
+exports.handleGithubWebhook = async (req, res) => {
+    try {
+        const secret = process.env.GITHUB_WEBHOOK_SECRET;
+        const payload = req.body;
+        if (!verifyGithubSignature(signature, secret, payload)) {
+            return res.status(401).send("Invalid signature");
+        }
+
+        const event = req.headers["x-github-event"]
+
+        if (event == "push") {
+            return res.status(200).json({ message: "Push event received successfully" });
+        }
+
+    } catch (error) {
+        console.error("Error handling GitHub webhook:", error);
+        res.status(500).json({ error: "Failed to handle GitHub webhook" });
+    }
+}
+
+

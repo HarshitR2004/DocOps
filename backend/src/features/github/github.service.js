@@ -1,5 +1,3 @@
-
-
 exports.fetchGithubRepos = async (accessToken) => {
     try {
         const response = await fetch("https://api.github.com/user/repos", {
