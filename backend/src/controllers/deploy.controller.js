@@ -10,11 +10,7 @@ exports.deployPublicRepo = async (req, res) => {
     return res.status(400).json({ error: "repoUrl is required" });
   }
 
-  if (!buildSpec || !buildSpec.exposedPort){
-    return res.status(400).json({
-      error: "buildSpec with exposedPort is required"
-    })
-  }
+
 
   try {
       const deployment = await deployService.initiateDeployment({
@@ -110,20 +106,24 @@ exports.stopDeployment = async (req, res) => {
 };
 
 
-
 exports.redeployDeployment = async (req, res) => {
     const { id } = req.params;
     const { buildSpec } = req.body;
 
-    // buildSpec is optional for redeploy (might just want to restart rebuild), 
-    // but if provided, it must be valid.
-    if (buildSpec && !buildSpec.exposedPort) {
-         return res.status(400).json({ error: "Invalid buildSpec: exposedPort is required if updating config" });
-    }
-
     try {
         const deployment = await deployService.redeployDeployment(id, buildSpec);
         res.json({ message: "Redeployment initiated", deployment });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+
+exports.getDeploymentConfig = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const deploymentConfig = await deployService.getDeploymentConfig(id);
+        res.json({ deploymentConfig });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

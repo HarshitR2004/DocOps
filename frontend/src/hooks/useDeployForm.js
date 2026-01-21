@@ -28,7 +28,11 @@ export const useDeployForm = (onDeploymentStart) => {
       
       let buildSpec = {}
       try {
-          buildSpec = JSON.parse(deployment.buildSpec || '{}')
+          if (typeof deployment.buildSpec === 'object' && deployment.buildSpec !== null) {
+              buildSpec = deployment.buildSpec
+          } else {
+              buildSpec = JSON.parse(deployment.buildSpec || '{}')
+          }
       } catch (e) { console.error("Failed to parse buildSpec", e) }
 
       setLanguage(buildSpec.language || 'detect')

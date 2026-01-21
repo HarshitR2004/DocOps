@@ -1,11 +1,14 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useDeployment } from '../../../hooks/useDeployment'
 import { getStatusColor, formatDate } from '../../../utils/deploymentUtils'
 import { useNavigate } from 'react-router-dom'
 import clsx from 'clsx'
+import RedeployModal from './RedeployModal'
+import { socketService } from '../../../services/socket'
 
 const DeploymentDetails = ({ deploymentId }) => {
   const navigate = useNavigate()
+  const [isRedeployModalOpen, setIsRedeployModalOpen] = useState(false)
   const {
     deployment,
     loading,
@@ -13,8 +16,19 @@ const DeploymentDetails = ({ deploymentId }) => {
     fetchDeployment
   } = useDeployment(deploymentId)
 
+
   useEffect(() => {
     fetchDeployment()
+    
+    // Subscribe to real-time status updates
+    socketService.subscribeToStatus(deploymentId, (data) => {
+        if (data.deploymentId === deploymentId) {
+            fetchDeployment()
+        }
+    })
+
+    return () => {
+    }
   }, [deploymentId, fetchDeployment])
 
   if (!deploymentId) return <div className="text-center py-8 text-secondary font-mono">Select a deployment</div>
@@ -28,12 +42,6 @@ const DeploymentDetails = ({ deploymentId }) => {
       <div className="glass-panel p-5 rounded-sm tech-border">
           <div className="flex items-center justify-between mb-4 border-b border-primary/20 pb-2">
              <h4 className="text-xs font-bold text-primary uppercase tracking-widest">System Overview</h4>
-             <div className={clsx(
-                'px-2 py-0.5 text-[10px] uppercase font-bold tracking-wider border rounded-sm',
-                getStatusColor(deployment.status)
-             )}>
-                {deployment.status}
-             </div>
           </div>
           
           <dl className="space-y-3 text-xs font-mono">
@@ -69,18 +77,27 @@ const DeploymentDetails = ({ deploymentId }) => {
                     rel="noopener noreferrer"
                     className="text-center px-4 py-2 bg-primary/10 border border-primary text-primary hover:bg-primary/20 transition-all font-bold uppercase tracking-widest text-xs rounded-sm"
                 >
-                    Launch Application
+                    Launch
                 </a>
              )}
              
              <button
-                onClick={() => navigate('/', { state: { deployment } })}
+                onClick={() => setIsRedeployModalOpen(true)}
                 className="text-center px-4 py-2 bg-white/5 border border-white/10 text-secondary hover:bg-white/10 hover:text-white transition-all font-bold uppercase tracking-widest text-xs rounded-sm"
              >
                 Reconfigure
              </button>
           </div>
        </div>
+
+       <RedeployModal 
+          isOpen={isRedeployModalOpen}
+          onClose={() => setIsRedeployModalOpen(false)}
+          deploymentId={deploymentId}
+          onRedeploySuccess={() => {
+              fetchDeployment()
+          }}
+       />
 
        </div>
   )

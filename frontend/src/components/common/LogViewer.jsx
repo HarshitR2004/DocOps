@@ -198,7 +198,7 @@ const LogViewer = ({ deploymentId, onClose, logType = 'runtime', isModal = true 
       {/* Log Content */}
       <div className="flex-1 p-4 overflow-y-auto font-mono text-xs bg-void z-20 scrollbar-thin">
         {visibleLogs.length === 0 ? (
-          <div className="text-secondary/50 italic animate-pulse">Waiting for logs...</div>
+          <div className="text-secondary/50 italic animate-pulse">Building...</div>
         ) : (
             visibleLogs.map((log, index) => (
             <div 

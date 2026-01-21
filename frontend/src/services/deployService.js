@@ -169,6 +169,24 @@ const redeployDeployment = async (deploymentId, buildSpec) => {
   return response.json();
 };
 
+/**
+ * Get deployment configuration
+ * @param {string} deploymentId - Deployment ID
+ * @returns {Promise<Object>} Deployment configuration
+ */
+const getDeploymentConfig = async (deploymentId) => {
+  const response = await fetch(`${BASE_URL}/deploy/${deploymentId}/config`, {
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || "Failed to fetch deployment config");
+  }
+
+  return response.json();
+};
+
 export const deployService = {
   deployPublicRepo,
   getDeploymentById,
@@ -178,4 +196,5 @@ export const deployService = {
   stopDeployment,
   deleteDeployment,
   redeployDeployment,
+  getDeploymentConfig,
 };

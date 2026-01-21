@@ -6,6 +6,8 @@ const ioManager = require("../sockets/io");
 const buildType = require("../utils/detectBuilds");
 const dockerService = require("../services/docker.service");
 const fs = require('fs');
+const { v4: uuidv4 } = require('uuid');
+
 
 const {
   getBuildLogStream,
@@ -59,8 +61,11 @@ exports.initiateDeployment = async ({ repoUrl, branch, buildSpec }) => {
     return deployment;
 }
 
+
 exports.processDeployment = async (deployment) => {
-  const workDir = path.join("/tmp", deployment.id);
+  const buildId = uuidv4();
+  const workDir = path.join("/tmp", `build-${buildId}`);
+
   const repoUrl = deployment.repository.cloneUrl;
   const branch = deployment.branch;
   const repoName = deployment.repository.name;
@@ -69,7 +74,9 @@ exports.processDeployment = async (deployment) => {
 
   try {
     await run(`git clone -b ${branch} ${repoUrl} ${workDir}`);
+    
     const commitSha = (await run("git rev-parse HEAD", workDir)).trim();
+    
     const imageTag = repoName.toLowerCase() + commitSha.substring(0, 7);
 
     if (buildSpec.language === 'detect' || !buildSpec.runtimeImage) {
@@ -108,7 +115,6 @@ exports.processDeployment = async (deployment) => {
     });
 
     const buildLogStream = getBuildLogStream(deployment.id);
-
     await dockerService.buildImage({
           imageTag,
           contextDir: workDir,
@@ -160,6 +166,15 @@ exports.processDeployment = async (deployment) => {
         deploymentId: deployment.id,
         status: "FAILED"
     });
+  } finally {
+      // Cleanup the ephemeral build directory
+      try {
+          if (fs.existsSync(workDir)) {
+              await fs.promises.rm(workDir, { recursive: true, force: true });
+          }
+      } catch (cleanupErr) {
+          console.warn(`Failed to cleanup build directory ${workDir}:`, cleanupErr.message);
+      }
   }
 };
 
@@ -246,7 +261,19 @@ exports.stopDeployment = async (deploymentId) => {
     });
 };
 
+exports.getDeploymentConfig = async (deploymentId) => {
+    const deployment = await prisma.deployment.findUnique({
+        where: { id: deploymentId },
+        include: { container: true, repository: true }
+    });
 
+    if (!deployment) throw new Error("Deployment not found");
+
+    return {
+        ...deployment,
+        buildSpec: JSON.parse(deployment.buildSpec)
+    };
+};
 
 
 
@@ -271,7 +298,7 @@ exports.redeployDeployment = async (deploymentId, newBuildSpec) => {
         where: { id: deploymentId },
         data: {
             buildSpec: newBuildSpec ? JSON.stringify(newBuildSpec) : deployment.buildSpec,
-            exposedPort: newBuildSpec?.exposedPort ? String(newBuildSpec.exposedPort) : deployment.exposedPort,
+            exposedPort: newBuildSpec?.exposedPort ? newBuildSpec.exposedPort: deployment.exposedPort,
             status: "PENDING",
             container: {
                 delete: deployment.container ? true : undefined
@@ -284,6 +311,7 @@ exports.redeployDeployment = async (deploymentId, newBuildSpec) => {
 
     return updatedDeployment;
 };
+
 
 
 function run(cmd, cwd) {

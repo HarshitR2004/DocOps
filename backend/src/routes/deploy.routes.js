@@ -3,9 +3,12 @@ const router = express.Router();
 const deployController = require("../controllers/deploy.controller");
 
 
-router.post("/", deployController.deployPublicRepo);
+const validateBuildSpec = require("../middleware/validateBuildspec");
+
+router.post("/", validateBuildSpec, deployController.deployPublicRepo);
 router.get("/:id", deployController.getDeploymentById);
-router.put("/:id", deployController.redeployDeployment);
+router.put("/:id", validateBuildSpec, deployController.redeployDeployment);
+router.get("/:id/config", deployController.getDeploymentConfig);
 
 router.get("/", deployController.listDeployments);
 
