@@ -2,9 +2,9 @@ const express = require("express");
 const session = require("express-session");
 const passport = require("./config/passport");
 
-const authRoutes = require("./routes/auth.routes");
-const deployRoutes = require("./routes/deploy.routes");
-const githubRoutes = require("./routes/github.routes");
+const authRoutes = require("./features/auth/auth.routes");
+const deployRoutes = require("./features/deployments/deploy.routes");
+const githubRoutes = require("./features/github/github.routes");
 
 const app = express();
 

@@ -1,7 +1,7 @@
 const http = require("http");
 const app = require("./app");
 const { Server } = require("socket.io");
-const initLogSockets = require("./sockets/logs.socket");
+const initLogSockets = require("./features/deployments/logs.socket");
 const ioManager = require("./sockets/io");
 
 
