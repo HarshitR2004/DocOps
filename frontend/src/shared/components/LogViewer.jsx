@@ -3,8 +3,6 @@ import { socketService } from "../services/socket";
 import { deployService } from "../../features/deployments/services/deployService";
 import clsx from "clsx";
 
-import { getStatusColor } from "../../utils/deploymentUtils";
-
 const StatusToggle = ({ deploymentId }) => {
     const [status, setStatus] = useState(null);
     const [loading, setLoading] = useState(false);

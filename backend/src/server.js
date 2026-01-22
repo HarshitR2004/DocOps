@@ -1,8 +1,8 @@
 const http = require("http");
 const app = require("./app");
 const { Server } = require("socket.io");
-const initLogSockets = require("./features/deployments/logs.socket");
-const ioManager = require("./sockets/io");
+const initLogSockets = require("./modules/deployment/sockets/logs.socket");
+const ioManager = require("./shared/infrastructure/sockets/io");
 
 
 const PORT = 8080;

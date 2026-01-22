@@ -1,4 +1,4 @@
-const { prisma } = require("../../config/prisma.config");
+const { prisma } = require("../../shared/config/prisma.config");
 
 const getGithubUsername = async (id) => {
     const user = await prisma.user.findUnique({

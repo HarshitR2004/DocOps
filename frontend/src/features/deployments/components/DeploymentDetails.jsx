@@ -4,11 +4,13 @@ import { getStatusColor, formatDate } from '../../../utils/deploymentUtils'
 import { useNavigate } from 'react-router-dom'
 import clsx from 'clsx'
 import RedeployModal from './RedeployModal'
+import CommitHistoryModal from './CommitHistoryModal'
 import { socketService } from '../../../shared/services/socket'
 
 const DeploymentDetails = ({ deploymentId }) => {
   const navigate = useNavigate()
   const [isRedeployModalOpen, setIsRedeployModalOpen] = useState(false)
+  const [isCommitHistoryModalOpen, setIsCommitHistoryModalOpen] = useState(false)
   const {
     deployment,
     loading,
@@ -87,6 +89,13 @@ const DeploymentDetails = ({ deploymentId }) => {
              >
                 Reconfigure
              </button>
+
+             <button
+                onClick={() => setIsCommitHistoryModalOpen(true)}
+                className="text-center px-4 py-2 bg-white/5 border border-white/10 text-secondary hover:bg-white/10 hover:text-white transition-all font-bold uppercase tracking-widest text-xs rounded-sm flex items-center justify-center gap-2"
+             >
+                <span>⟲</span> Rollback
+             </button>
           </div>
        </div>
 
@@ -95,6 +104,15 @@ const DeploymentDetails = ({ deploymentId }) => {
           onClose={() => setIsRedeployModalOpen(false)}
           deploymentId={deploymentId}
           onRedeploySuccess={() => {
+              fetchDeployment()
+          }}
+       />
+
+       <CommitHistoryModal 
+          isOpen={isCommitHistoryModalOpen}
+          onClose={() => setIsCommitHistoryModalOpen(false)}
+          deploymentId={deploymentId}
+          onRollback={() => {
               fetchDeployment()
           }}
        />

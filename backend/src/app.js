@@ -1,10 +1,10 @@
 const express = require("express");
 const session = require("express-session");
-const passport = require("./config/passport");
+const passport = require("./shared/config/passport");
 
-const authRoutes = require("./features/auth/auth.routes");
-const deployRoutes = require("./features/deployments/deploy.routes");
-const githubRoutes = require("./features/github/github.routes");
+const authRoutes = require("./modules/auth/auth.routes");
+const deployRoutes = require("./modules/deployment/deploy.routes");
+const githubRoutes = require("./modules/github/github.routes");
 
 const app = express();
 
@@ -27,7 +27,11 @@ app.use((req, res, next) => {
 });
 
 
-app.use(express.json());
+app.use(express.json({
+  verify: (req, res, buf) => {
+    req.rawBody = buf;
+  }
+}));
 app.use(express.urlencoded({ extended: true }));
 
 

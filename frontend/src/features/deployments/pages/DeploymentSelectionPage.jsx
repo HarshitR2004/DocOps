@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
 import { Github, Link as LinkIcon, ArrowRight } from "lucide-react";
 

@@ -1,5 +1,5 @@
 const deployService = require("./deploy.service");
-const { prisma } = require("../../config/prisma.config");
+const { prisma } = require("../.././shared/config/prisma.config");
 
 
 
@@ -124,6 +124,63 @@ exports.getDeploymentConfig = async (req, res) => {
     try {
         const deploymentConfig = await deployService.getDeploymentConfig(id);
         res.json({ deploymentConfig });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+exports.getDeploymentHistory = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const history = await deployService.getDeploymentHistory(id);
+        res.json({ history });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+exports.rollbackDeployment = async (req, res) => {
+    const { id } = req.params;
+    const { targetCommitSha } = req.body;
+
+    if (!targetCommitSha) {
+        return res.status(400).json({ error: "targetCommitSha is required" });
+    }
+
+    try {
+        const newDeployment = await deployService.rollbackToCommit(id, targetCommitSha);
+        res.json({ 
+            message: "Rollback initiated", 
+            deployment: newDeployment 
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+exports.getDeploymentHistory = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const history = await deployService.getDeploymentHistory(id);
+        res.json({ history });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+exports.rollbackDeployment = async (req, res) => {
+    const { id } = req.params;
+    const { targetCommitSha } = req.body;
+
+    if (!targetCommitSha) {
+        return res.status(400).json({ error: "targetCommitSha is required" });
+    }
+
+    try {
+        const newDeployment = await deployService.rollbackToCommit(id, targetCommitSha);
+        res.json({ 
+            message: "Rollback initiated", 
+            deployment: newDeployment 
+        });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

@@ -187,6 +187,48 @@ const getDeploymentConfig = async (deploymentId) => {
   return response.json();
 };
 
+/**
+ * Get deployment history (parent deployment chain)
+ * @param {string} deploymentId - Deployment ID
+ * @returns {Promise<Object>} Deployment history with commit SHAs
+ */
+const getDeploymentHistory = async (deploymentId) => {
+  const response = await fetch(`${BASE_URL}/deploy/${deploymentId}/history`, {
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || "Failed to fetch deployment history");
+  }
+
+  return response.json();
+};
+
+/**
+ * Rollback deployment to a specific commit SHA
+ * @param {string} deploymentId - Current deployment ID
+ * @param {string} targetCommitSha - Target commit SHA to rollback to
+ * @returns {Promise<Object>} Rollback response
+ */
+const rollbackDeployment = async (deploymentId, targetCommitSha) => {
+  const response = await fetch(`${BASE_URL}/deploy/${deploymentId}/rollback`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify({ targetCommitSha }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || "Failed to rollback deployment");
+  }
+
+  return response.json();
+};
+
 export const deployService = {
   deployPublicRepo,
   getDeploymentById,
@@ -197,4 +239,6 @@ export const deployService = {
   deleteDeployment,
   redeployDeployment,
   getDeploymentConfig,
+  getDeploymentHistory,
+  rollbackDeployment,
 };

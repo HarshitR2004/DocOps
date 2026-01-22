@@ -4,11 +4,7 @@ exports.streamContainerLogs = (
   containerId, 
   {onLog, logStream}
 ) => {
-  const logProcess = spawn("docker", [
-    "logs",
-    "-f",
-    containerId,
-  ]);
+  const logProcess = spawn("docker", ["logs","-f",containerId,]);
 
   logProcess.stdout.on("data", (data) => {
     logStream.write(data.toString());
@@ -30,11 +26,14 @@ exports.streamContainerLogs = (
 
 exports.buildImage = ({ imageTag, contextDir, onLog, logStream }) => {
   return new Promise((resolve, reject) => {
-    const buildProcess = spawn(
-      "docker",
-      ["build", "-t", imageTag, "."],
-      { cwd: contextDir }
-    );
+      const buildProcess = spawn(
+    "sh",
+    [
+      "-c",
+      `docker build --progress=plain -t ${imageTag} . 2>&1 | awk '{ print strftime("%Y-%m-%d %H:%M:%S"), $0 }'`
+    ],
+    { cwd: contextDir }
+  );
 
 
     buildProcess.stdout.on("data", (data) => {
@@ -43,6 +42,7 @@ exports.buildImage = ({ imageTag, contextDir, onLog, logStream }) => {
     });
 
     buildProcess.stderr.on("data", (data) => {
+      console.log(data.toString());
       logStream.write(data.toString());
       onLog(data.toString());
     });

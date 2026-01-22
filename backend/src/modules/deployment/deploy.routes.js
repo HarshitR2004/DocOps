@@ -9,6 +9,8 @@ router.post("/", validateBuildSpec, deployController.deployPublicRepo);
 router.get("/:id", deployController.getDeploymentById);
 router.put("/:id", validateBuildSpec, deployController.redeployDeployment);
 router.get("/:id/config", deployController.getDeploymentConfig);
+router.get("/:id/history", deployController.getDeploymentHistory);
+router.post("/:id/rollback", deployController.rollbackDeployment);
 
 router.get("/", deployController.listDeployments);
 

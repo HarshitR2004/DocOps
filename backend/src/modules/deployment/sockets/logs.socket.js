@@ -1,6 +1,6 @@
-const { prisma } = require("../../config/prisma.config");
-const dockerService = require("./docker.service");
-const { getRuntimeLogStream } = require("../../utils/logWriter");
+const { prisma } = require("../../../shared/config/prisma.config");
+const dockerService = require("../../../shared/infrastructure/docker/docker.service");
+const { getRuntimeLogStream } = require("../../../shared/utils/logWriter");
 
 
 module.exports = (io) => {

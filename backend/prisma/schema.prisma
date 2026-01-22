@@ -21,7 +21,7 @@ model User {
 
 model Repository {
   id            String   @id @default(uuid())
-  userId        String?add
+  userId        String?
   githubRepoId  BigInt
   name          String
   fullName      String
@@ -52,6 +52,10 @@ model Deployment {
 
   repository Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
   container  Container? 
+
+  parentDeploymentId    String?
+  parentDeployment      Deployment? @relation("Lineage", fields: [parentDeploymentId], references: [id])
+  children              Deployment[] @relation("Lineage")
 
   @@index([repositoryId])
 }
