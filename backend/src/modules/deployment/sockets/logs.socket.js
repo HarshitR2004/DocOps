@@ -5,8 +5,6 @@ const { getRuntimeLogStream } = require("../../../shared/utils/logWriter");
 
 module.exports = (io) => {
   io.on("connection", (socket) => {
-    console.log("Socket connected:", socket.id);
-
     // Runtime logs subscription (legacy/direct stream)
     socket.on("subscribe-logs", async ({ deploymentId }) => {
       const deployment = await prisma.deployment.findUnique({
@@ -46,8 +44,8 @@ module.exports = (io) => {
         socket.join(`deployment-${deploymentId}`);
     });
 
-    socket.on("disconnect", () => {
-      console.log("Socket disconnected:", socket.id);
-    });
+    socket.on("disconnect", () => {    });
   });
 };
+
+

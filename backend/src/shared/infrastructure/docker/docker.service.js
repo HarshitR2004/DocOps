@@ -42,7 +42,6 @@ exports.buildImage = ({ imageTag, contextDir, onLog, logStream }) => {
     });
 
     buildProcess.stderr.on("data", (data) => {
-      console.log(data.toString());
       logStream.write(data.toString());
       onLog(data.toString());
     });
@@ -54,3 +53,5 @@ exports.buildImage = ({ imageTag, contextDir, onLog, logStream }) => {
     });
   });
 };
+
+

@@ -36,9 +36,7 @@ exports.deployPublicRepo = async (req, res) => {
   } catch(e) {
       if (!res.headersSent) {
         res.status(500).json({ error: e.message });
-      } else {
-        console.error("Error after response sent:", e);
-      }
+      } else {      }
   }
 };
 
@@ -185,3 +183,5 @@ exports.rollbackDeployment = async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 };
+
+

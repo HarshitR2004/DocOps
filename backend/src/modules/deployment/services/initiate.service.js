@@ -1,34 +1,51 @@
 const { prisma } = require("../../../shared/config/prisma.config");
+const { getGitHubRepoData } = require("../../../modules/github/github.service")
 
-exports.initiateDeployment = async ({ repoUrl, branch, buildSpec }) => {
-    const [, , , owner, repoName] = repoUrl.split("/");
-    const fullName = `${owner}/${repoName.replace(".git", "")}`;
 
+async function resolveRepository(repoUrl) {
+  const repoData = await getGitHubRepoData(repoUrl);
+
+  return {
+    githubRepoId: BigInt(repoData.id),
+    name: repoData.name,
+    fullName: repoData.full_name,
+    cloneUrl: repoData.clone_url,
+    defaultBranch: repoData.default_branch,
+  };
+}
+
+exports.initiateDeployment = async ({ repoUrl, buildSpec }) => {
     if (!buildSpec || !buildSpec.exposedPort) {
         throw new Error("Invalid buildSpec: exposedPort is required");
     }
 
-    const repository = await prisma.repository.create({
-      data: {
-        githubRepoId: BigInt(0),
-        name: repoName,
-        fullName,
-        cloneUrl: repoUrl,
-        defaultBranch: branch,
-        webhookId: BigInt(0),
-      },
-    });
+    const repoMeta = await resolveRepository(repoUrl);
 
-    const deployment = await prisma.deployment.create({
-      data: {
-        repositoryId: repository.id,
-        branch,
-        buildSpec: JSON.stringify(buildSpec),
-        exposedPort: buildSpec.exposedPort,
-        commitSha: "UNKNOWN",
-        status: "PENDING",
-      },
-    });
+  const [repository, deployment] = await prisma.$transaction(async (tx) => {
+  const repository = await tx.repository.create({
+    data: {
+      githubRepoId: repoMeta.githubRepoId,
+      name: repoMeta.name,
+      fullName: repoMeta.fullName,
+      cloneUrl: repoMeta.cloneUrl,
+      defaultBranch: repoMeta.defaultBranch,
+    },
+  });
+
+  const deployment = await tx.deployment.create({
+    data: {
+      repositoryId: repository.id,
+      branch: repoMeta.defaultBranch,
+      buildSpec: JSON.stringify(buildSpec),
+      exposedPort: buildSpec.exposedPort,
+      commitSha: "UNKNOWN",
+      status: "PENDING",
+    },
+  });
+
+  return [repository, deployment];
+});
+
 
     return deployment;
 }

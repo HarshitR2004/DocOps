@@ -21,6 +21,6 @@ ioManager.init(io);
 initLogSockets(io);
 
 
-server.listen(PORT, () => {
-  console.log(`DocOps Backend running on port ${PORT}`);
-});
+server.listen(PORT, () => {});
+
+

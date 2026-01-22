@@ -15,9 +15,8 @@ exports.deleteDeployment = async (deploymentId) => {
     if (deployment.container && deployment.container.dockerContainerId) {
       try {
         await run(`docker rm -f ${deployment.container.dockerContainerId}`);
-      } catch (e) {
-        console.warn("Failed to remove docker container:", e.message);
-      }
+        await run (`docker rmi -f ${deployment.container.dockerContainerId}`);
+      } catch (e) {      }
     }
 
     try {
@@ -28,9 +27,7 @@ exports.deleteDeployment = async (deploymentId) => {
       if (fs.existsSync(logDir)) {
         await fs.promises.rm(logDir, { recursive: true, force: true });
       }
-    } catch (e) {
-      console.warn("Failed to delete deployment logs:", e.message);
-    }
+    } catch (e) {    }
 
     await tx.deployment.delete({
       where: { id: deploymentId },
@@ -47,3 +44,5 @@ exports.deleteDeployment = async (deploymentId) => {
     return { success: true };
   });
 };
+
+

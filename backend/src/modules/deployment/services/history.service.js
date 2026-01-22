@@ -1,9 +1,5 @@
 const { prisma } = require("../../../shared/config/prisma.config");
 
-/**
- * Get deployment history by traversing parent chain
- * Returns array of parent deployments in chronological order (newest first)
- */
 exports.getDeploymentHistory = async (deploymentId) => {
     const history = [];
     
@@ -20,7 +16,6 @@ exports.getDeploymentHistory = async (deploymentId) => {
         throw new Error("Deployment not found");
     }
 
-    // Add current deployment to history
     history.push({
         id: currentDeployment.id,
         commitSha: currentDeployment.commitSha,
@@ -30,7 +25,6 @@ exports.getDeploymentHistory = async (deploymentId) => {
         isCurrent: true
     });
 
-    // Traverse parent chain
     let parent = currentDeployment.parentDeployment;
     while (parent) {
         history.push({
@@ -56,9 +50,7 @@ exports.getDeploymentHistory = async (deploymentId) => {
     return history;
 };
 
-/**
- * Get all deployments for a repository and branch
- */
+
 exports.getRepositoryDeployments = async (repositoryId, branch) => {
     return await prisma.deployment.findMany({
         where: { 

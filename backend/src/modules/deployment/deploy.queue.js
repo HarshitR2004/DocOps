@@ -6,10 +6,8 @@ const deployQueue = new PQueue({
   interval: 1000, 
 });
 
-deployQueue.on("active", () => {
-  console.log(
-    `[QUEUE] Running: ${deployQueue.pending} pending, ${deployQueue.size} queued`
-  );
-});
+deployQueue.on("active", () => {});
 
 module.exports = deployQueue;
+
+
