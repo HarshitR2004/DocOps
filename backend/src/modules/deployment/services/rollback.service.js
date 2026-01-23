@@ -1,6 +1,7 @@
 const { prisma } = require("../../../shared/config/prisma.config");
 const { processDeployment } = require("./process.service");
 const { stopDeployment } = require("./stop.service");
+const ioManager = require("../../../shared/infrastructure/sockets/io");
 
 
 exports.rollbackToCommit = async (currentDeploymentId, targetCommitSha) => {
@@ -41,6 +42,10 @@ exports.rollbackToCommit = async (currentDeploymentId, targetCommitSha) => {
             parentDeploymentId: currentDeploymentId
         },
         include: { repository: true }
+    });
+
+    ioManager.get().to(`deployment-${currentDeploymentId}`).emit("new-deployment", {
+        newDeploymentId: newDeployment.id
     });
 
     try {

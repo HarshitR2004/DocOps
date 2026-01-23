@@ -3,6 +3,7 @@ const { run } = require("./utils");
 const { processDeployment } = require("./process.service");
 const { stopDeployment } = require("./stop.service");
 const deployQueue = require("../deploy.queue");
+const ioManager = require("../../../shared/infrastructure/sockets/io");
 
 exports.redeployDeployment = async (deploymentId, newBuildSpec) => {
     const deployment = await prisma.deployment.findUnique({
@@ -66,6 +67,10 @@ exports.redeployFromParent = async (deploymentId, branch) => {
             parentDeploymentId: deploymentId
         },
         include: { repository: true }
+    });
+
+    ioManager.get().to(`deployment-${deploymentId}`).emit("new-deployment", {
+        newDeploymentId: newDeployment.id
     });
 
     try {

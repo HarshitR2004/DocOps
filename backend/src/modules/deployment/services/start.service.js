@@ -1,5 +1,6 @@
 const { prisma } = require("../../../shared/config/prisma.config");
 const { run } = require("./utils");
+const ioManager = require("../../../shared/infrastructure/sockets/io");
 
 exports.startDeployment = async (deploymentId) => {
     const deployment = await prisma.deployment.findUnique({
@@ -19,9 +20,16 @@ exports.startDeployment = async (deploymentId) => {
         data: { status: 'RUNNING', startedAt: new Date(), stoppedAt: null }
     });
 
-    return prisma.deployment.update({
+    const updatedDeployment = await prisma.deployment.update({
         where: { id: deploymentId },
         data: { status: 'RUNNING' },
         include: { container: true }
     });
+
+    ioManager.get().to(`deployment-${deploymentId}`).emit("deployment-status", {
+        deploymentId: deploymentId,
+        status: "RUNNING"
+    });
+
+    return updatedDeployment;
 };
