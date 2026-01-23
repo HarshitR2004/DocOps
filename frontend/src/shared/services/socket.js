@@ -59,6 +59,23 @@ class SocketService {
     }
   }
 
+  subscribeToNewDeployment(deploymentId, callback) {
+    if (!this.socket) this.connect();
+
+    // Ensure we are in the deployment room
+    this.socket.emit("subscribe-deployment-status", { deploymentId });
+
+    this.socket.on("new-deployment", (data) => {
+        callback(data);
+    });
+  }
+
+  unsubscribeFromNewDeployment() {
+    if (this.socket) {
+        this.socket.off("new-deployment");
+    }
+  }
+
   disconnect() {
     if (this.socket) {
       this.socket.disconnect();

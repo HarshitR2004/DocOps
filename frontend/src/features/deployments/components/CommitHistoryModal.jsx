@@ -1,13 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useNavigate } from 'react-router-dom';
+import ConfirmModal from '../../../shared/components/ConfirmModal';
 import { deployService } from '../../../features/deployments/services/deployService';
 
 const CommitHistoryModal = ({ isOpen, onClose, deploymentId, onRollback }) => {
+  const navigate = useNavigate();
   const [isAnimating, setIsAnimating] = useState(false);
   const [history, setHistory] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isRollingBack, setIsRollingBack] = useState(false);
+  const [commitToRollback, setCommitToRollback] = useState(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -37,14 +41,27 @@ const CommitHistoryModal = ({ isOpen, onClose, deploymentId, onRollback }) => {
     }
   };
 
-  const handleRollback = async (commitSha) => {
-    if (window.confirm(`Are you sure you want to rollback to commit ${commitSha.substring(0, 7)}?`)) {
-      setIsRollingBack(true);
-      try {
-        await deployService.rollbackDeployment(deploymentId, commitSha);
+  const handleRollbackClick = (commitSha) => {
+      setCommitToRollback(commitSha);
+  };
+
+  const executeRollback = async () => {
+    if (!commitToRollback) return;
+    
+    setIsRollingBack(true);
+    try {
+        // Response contains the new deployment object
+        const response = await deployService.rollbackDeployment(deploymentId, commitToRollback);
+        
+        // Immediate navigation to the new deployment for better UX
+        if (response && response.id) {
+            navigate(`/deployments/${response.id}`);
+        }
+        
         if (onRollback) {
           onRollback();
         }
+        setCommitToRollback(null);
         onClose();
       } catch (err) {
         alert(`Rollback failed: ${err.message}`);
@@ -52,7 +69,6 @@ const CommitHistoryModal = ({ isOpen, onClose, deploymentId, onRollback }) => {
       } finally {
         setIsRollingBack(false);
       }
-    }
   };
 
   const formatDate = (dateString) => {
@@ -184,7 +200,7 @@ const CommitHistoryModal = ({ isOpen, onClose, deploymentId, onRollback }) => {
                     {/* Rollback Button */}
                     {!deployment.isCurrent && deployment.commitSha !== 'UNKNOWN' && (
                       <button
-                        onClick={() => handleRollback(deployment.commitSha)}
+                        onClick={() => handleRollbackClick(deployment.commitSha)}
                         disabled={isRollingBack}
                         className="px-3 py-1.5 text-xs font-mono font-bold uppercase text-primary hover:text-white transition-colors border border-primary/20 hover:border-primary disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                       >
@@ -223,6 +239,17 @@ const CommitHistoryModal = ({ isOpen, onClose, deploymentId, onRollback }) => {
           </div>
         </div>
       </div>
+      
+      <ConfirmModal 
+        isOpen={!!commitToRollback}
+        onClose={() => setCommitToRollback(null)}
+        onConfirm={executeRollback}
+        title="Confirm Rollback"
+        message={`Are you sure you want to rollback to commit ${commitToRollback ? commitToRollback.substring(0, 7) : ''}? This will create a new deployment.`}
+        isLoading={isRollingBack}
+        confirmText="Confirm_Rollback"
+        processingText="Rolling_Back..."
+      />
     </div>,
     document.body
   );

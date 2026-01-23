@@ -6,7 +6,7 @@ export const useDeployForm = (onDeploymentStart) => {
   const [branch, setBranch] = useState('main')
   
   // Build Spec State
-  const [language, setLanguage] = useState('detect') // 'node', 'python', 'detect'
+  const [language, setLanguage] = useState('node') // 'node', 'python'
   const [exposedPort, setExposedPort] = useState('3000')
   const [runtimeImage, setRuntimeImage] = useState('')
   const [buildCommand, setBuildCommand] = useState('')
@@ -35,7 +35,7 @@ export const useDeployForm = (onDeploymentStart) => {
           }
       } catch (e) { console.error("Failed to parse buildSpec", e) }
 
-      setLanguage(buildSpec.language || 'detect')
+      setLanguage(buildSpec.language || 'node')
       setExposedPort(deployment.exposedPort || buildSpec.exposedPort || '3000')
       setRuntimeImage(buildSpec.runtimeImage || '')
       setBuildCommand(buildSpec.buildCommand || '')
@@ -44,12 +44,6 @@ export const useDeployForm = (onDeploymentStart) => {
 
   const handleLanguageChange = (lang) => {
       setLanguage(lang)
-      // Reset custom fields if switching back to detect or defaults
-      if (lang === 'detect') {
-          setRuntimeImage('')
-          setBuildCommand('')
-          setStartCommand('')
-      }
       // Can add defaults here if needed, but backend handles defaults beautifully
   }
 
@@ -111,7 +105,7 @@ export const useDeployForm = (onDeploymentStart) => {
         setRepoUrl('')
         setBranch('main')
         setExposedPort('3000')
-        setLanguage('detect')
+        setLanguage('node')
         setRuntimeImage('')
         setBuildCommand('')
         setStartCommand('')

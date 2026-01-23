@@ -25,7 +25,7 @@ const DeploymentDetails = ({ deploymentId }) => {
     // Subscribe to real-time status updates
     socketService.subscribeToStatus(deploymentId, (data) => {
         if (data.deploymentId === deploymentId) {
-            fetchDeployment()
+            fetchDeployment(true)
         }
     })
 

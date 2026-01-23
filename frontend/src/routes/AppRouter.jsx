@@ -50,6 +50,10 @@ const AppRouter = () => {
           element={isAuthenticated ? <DeploymentsListPage /> : <Navigate to="/login" />}
         />
         <Route
+          path="/deployments/:id"
+          element={isAuthenticated ? <DeploymentPage /> : <Navigate to="/login" />}
+        />
+        <Route
           path="/deployment/:id"
           element={isAuthenticated ? <DeploymentPage /> : <Navigate to="/login" />}
         />

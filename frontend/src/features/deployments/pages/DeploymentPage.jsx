@@ -20,21 +20,30 @@ const DeploymentPage = () => {
     // Subscribe to status updates for real-time refresh
     const handleStatusUpdate = (update) => {
         if (update && update.deploymentId === id) {
-            fetchDeployment();
+            fetchDeployment(true);
         }
     };
     
     socketService.subscribeToStatus(id, handleStatusUpdate);
 
+    // Subscribe to new deployment events (e.g. from webhook or rollback)
+    const handleNewDeployment = (data) => {
+        if (data && data.newDeploymentId) {
+            navigate(`/deployments/${data.newDeploymentId}`);
+        }
+    };
+
+    socketService.subscribeToNewDeployment(id, handleNewDeployment);
+
     // Poll for updates if status is transitional (backup)
     const interval = setInterval(() => {
         if (deployment && ['BUILDING', 'PENDING'].includes(deployment.status)) {
-            fetchDeployment()
+            fetchDeployment(true)
         }
     }, 5000)
     return () => {
         clearInterval(interval);
-        // Clean up socket listener if needed or rely on component unmount
+        socketService.unsubscribeFromNewDeployment();
     }
   }, [id, fetchDeployment, deployment?.status])
 
@@ -89,16 +98,6 @@ const DeploymentPage = () => {
                  }`}>
                      {deployment?.status || 'UNKNOWN'}
                  </div>
-                 <button 
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        fetchDeployment();
-                    }}
-                    className="p-2 text-dim hover:text-primary transition-colors hover:rotate-180 duration-500"
-                    title="Refresh Data"
-                >
-                    <RefreshCw size={18} />
-                 </button>
             </div>
        </header>
 

@@ -6,18 +6,18 @@ export const useDeployment = (deploymentId) => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
-  const fetchDeployment = useCallback(async () => {
+  const fetchDeployment = useCallback(async (isBackground = false) => {
     if (!deploymentId) return
 
     try {
-      setLoading(true)
+      if (!isBackground) setLoading(true)
       setError(null)
       const data = await deployService.getDeploymentById(deploymentId)
       setDeployment(data)
     } catch (err) {
       setError(err.message)
     } finally {
-      setLoading(false)
+      if (!isBackground) setLoading(false)
     }
   }, [deploymentId])
 

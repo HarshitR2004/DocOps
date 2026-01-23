@@ -8,9 +8,7 @@ const DeployFromUrlPage = () => {
   const { logout } = useAuth();
 
   const handleDeploymentStart = (response) => {
-    // Navigate to the deployment details or list after start if needed
-    // But EnterRepo handles navigation to deployment details on success usually (based on previous code)
-    // Checking EnterRepo code... it does navigate to `/deployment/${response.deploymentId}`
+
   };
 
   return (

@@ -15,7 +15,7 @@ const EnterRepo = ({ onDeploymentStart, initialDeployment }) => {
     if (response?.deploymentId || response?.deployment?.id) {
        // Support both response formats (new vs update)
        const id = response.deploymentId || response.deployment.id
-       navigate(`/deployment/${id}`)
+       navigate(`/deployments/${id}`)
     }
   }
 
@@ -136,7 +136,6 @@ const EnterRepo = ({ onDeploymentStart, initialDeployment }) => {
                             'disabled:opacity-50 disabled:cursor-not-allowed'
                         )}
                     >
-                        <option value="detect">AUTO_DETECT</option>
                         <option value="node">NODE_JS</option>
                         <option value="python">PYTHON</option>
                     </select>
@@ -156,13 +155,13 @@ const EnterRepo = ({ onDeploymentStart, initialDeployment }) => {
             <div className="space-y-4 pl-4 border-l border-white/5">
                  <Field className="group">
                     <Label className="text-[10px] font-mono font-bold text-dim uppercase mb-1 block group-focus-within:text-primary transition-colors">
-                    RUNTIME_IMAGE {language === 'detect' && '(OPTIONAL / AUTO)'}
+                    RUNTIME_IMAGE
                     </Label>
                     <Input
                         type="text"
                         value={runtimeImage}
                         onChange={(e) => setRuntimeImage(e.target.value)}
-                        placeholder={language === 'node' ? 'node:18' : language === 'python' ? 'python:3.9' : 'Auto'}
+                        placeholder={language === 'node' ? 'node:18' : language === 'python' ? 'python:3.9' : ''}
                         disabled={loading}
                         className="block w-full rounded-sm bg-black/30 border border-border px-3 py-2 text-xs font-mono text-text-primary placeholder:text-dim/50 focus:outline-none focus:border-primary transition-all"
                     />
@@ -171,7 +170,7 @@ const EnterRepo = ({ onDeploymentStart, initialDeployment }) => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Field className="group">
                         <Label className="text-[10px] font-mono font-bold text-dim uppercase mb-1 block group-focus-within:text-primary transition-colors">
-                        BUILD_COMMAND {language === 'detect' && '(OPTIONAL / AUTO)'}
+                        BUILD_COMMAND
                         </Label>
                         <Input
                             type="text"
@@ -184,7 +183,7 @@ const EnterRepo = ({ onDeploymentStart, initialDeployment }) => {
                     </Field>
                     <Field className="group">
                         <Label className="text-[10px] font-mono font-bold text-dim uppercase mb-1 block group-focus-within:text-primary transition-colors">
-                        START_COMMAND {language === 'detect' && '(OPTIONAL / AUTO)'}
+                        START_COMMAND
                         </Label>
                         <Input
                             type="text"

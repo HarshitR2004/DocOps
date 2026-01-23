@@ -20,7 +20,7 @@ const DeploymentList = ({ deployments = [], loading, onRefresh }) => {
   const [viewMode, setViewMode] = useState('grid') // 'grid' or 'list'
 
   const handleView = (deploymentId) => {
-    navigate(`/deployment/${deploymentId}`)
+    navigate(`/deployments/${deploymentId}`)
   }
 
   const confirmDelete = (deployment) => {

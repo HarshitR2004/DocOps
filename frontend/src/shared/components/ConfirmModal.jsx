@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 
-const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message, isLoading }) => {
+const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message, isLoading, confirmText = "Confirm_Deletion", processingText = "Processing..." }) => {
   const [isAnimating, setIsAnimating] = useState(false)
 
   useEffect(() => {
@@ -60,11 +60,11 @@ const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message, isLoading })
             {isLoading ? (
                 <>
                     <span className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                    Processing...
+                    {processingText}
                 </>
             ) : (
                 <>
-                    Confirm_Deletion
+                    {confirmText}
                     <span className="group-hover:translate-x-1 transition-transform">&gt;</span>
                 </>
             )}
