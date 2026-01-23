@@ -1,33 +1,102 @@
 # DocOps
 
-**DocOps** is a modern, self-hosted Platform-as-a-Service (PaaS) designed to streamline the deployment of web applications directly from GitHub. It abstracts away the complexity of infrastructure management, offering a developer-centric dashboard for automating containerization, deployment, and monitoring.
+DocOps is a self-hosted Platform-as-a-Service (PaaS) solution that automates the deployment lifecycle. The platform provides  deployment automation, continuous delivery workflows and comprehensive application lifecycle management.
+
+### Core Components
+
+**Deployment Engine**: Asynchronous job queue system managing concurrent deployment workflows with priority scheduling and failure recovery mechanisms. Implements atomic deployment operations with rollback capabilities and parent-child deployment lineage tracking.
+
+**Container Orchestration Layer**: Docker-based container runtime management with automated image building, lifecycle control, and port allocation. Supports custom Dockerfile generation, multi-stage builds, and optimized layer caching strategies.
+
+**Real-Time Communication Infrastructure**: WebSocket-based bidirectional streaming for build logs, deployment status updates, and system health metrics. Implements Socket.IO with room-based message routing for isolated deployment channels.
+
+**GitHub Integration Layer**: OAuth 2.0 authentication flow with repository access management and webhook-driven continuous deployment. Supports signature verification for secure webhook payload validation.
 
 ## Key Features
 
+### Automated Deployment Pipeline
 
-### Seamless Deployment Pipeline
-*   **One-Click Deploy**: Launch any public or private GitHub repository instantly.
-*   **Auto-Detection**: Intelligent analysis of your repository to auto-configure Docker builds for Node.js, Python, and more.
-*   **Custom Build Specs**: Full control over build commands, runtime images, and exposed ports.
+The platform provides zero-configuration deployment for supported application frameworks through intelligent project detection and automated Dockerfile generation. Build type detection analyzes repository structure to identify Node.js, Python, and custom build configurations, applying framework-specific defaults for runtime images, dependency installation, and startup commands.
 
-### Full Lifecycle Management
-*   **Container Control**: Start, stop, and terminate applications directly from the dashboard.
-*   **Hot Redeploy**: Reconfigure and redeploy applications with new settings without downtime.
-*   **Health Monitoring**: Continuous status tracking with visual health indicators.
+Deployment workflows are managed through an asynchronous job queue that ensures serialized execution per repository while enabling concurrent deployments across different projects. Each deployment generates isolated build environments in ephemeral directories with automatic cleanup post-deployment.
+
+### Continuous Delivery Automation
+
+GitHub webhook integration enables automated redeployment on code push events. The system maintains deployment lineage through parent-child relationships, allowing tracking of deployment history and rollback to previous commits. When a webhook is received, the platform identifies active deployments for the affected branch, queues child deployments with commit SHA references, and manages the transition from parent to child deployment states.
+
+### Deployment Rollback System
+
+Rollback functionality leverages deployment history stored in parent-child relationships to enable one-click reversion to previous application states. Users can select any historical commit from the deployment chain, triggering creation of a new child deployment that checks out the specific commit SHA and rebuilds the container at that point in history. This maintains an audit trail of all deployment changes and state transitions.
+
+### Container Lifecycle Management
+
+Comprehensive container control operations including start, stop, delete, and reconfigure actions. The platform manages Docker container lifecycle through direct API integration, handling port mapping, volume management, and container networking. Failed containers are automatically marked and isolated, while successful deployments register container metadata for monitoring and management operations.
+
+### Build Specification System
+
+Advanced build configuration through JSON-based build specs supporting custom runtime images, multi-command build steps, environment variable injection, and port exposure settings. Users can define language-specific configurations, override auto-detection with explicit runtime specifications, and customize the entire build pipeline while maintaining compatibility with standard Dockerfile workflows.
 
 ### Real-Time Observability
-*   **Live Log Streaming**: Watch build processes and runtime logs stream in real-time via WebSocket.
-*   **Historical Logs**: Access past build logs for debugging and auditing.
 
-### Secure & Integrated
-*   **GitHub OAuth**: Secure authentication and repository access.
-*   **Private Repos**: Full support for deploying from private organizations and repositories.
+Live log streaming delivers build output and runtime logs to connected clients with minimal latency through WebSocket connections. The system maintains persistent log files on disk while simultaneously streaming to connected dashboards. Build logs capture Docker image construction output, while runtime logs provide container stdout/stderr streams for debugging and monitoring.
+
+## Technical Implementation
+
+### Backend Architecture
+
+**Node.js/Express API Server**: RESTful API endpoints with middleware pipeline for authentication, request validation, and error handling. Implements async/await patterns throughout for non-blocking I/O operations.
+
+**Prisma ORM with SQLite**: Type-safe database access layer with automatic migration management and relation loading. Schema defines deployments, repositories, containers, and user models with foreign key relationships and cascading operations.
+
+**Queue-Based Job Processing**: In-memory job queue with promise-based task execution and error recovery. Supports adding async functions that execute sequentially with automatic retry on transient failures.
+
+**Git Integration**: Direct git command execution through child process spawning for repository cloning, branch checkout, and commit resolution. Supports both public and authenticated repository access.
+
+**Docker Service Layer**: Abstraction over Docker CLI and API for image building, container creation, lifecycle management, and cleanup operations. Handles streaming build output to log files while emitting progress events.
+
+**WebSocket Infrastructure**: Socket.IO server managing real-time bidirectional communication with room-based message routing. Clients subscribe to deployment-specific rooms for isolated log and status streams.
+
+### Deployment Workflow
+
+1. Repository metadata fetched from GitHub API including clone URL, default branch, and repository ID
+2. Deployment record created in database with pending status and queued for processing
+3. Git clone operation executed in temporary build directory with branch-specific checkout
+4. Build type detection analyzes repository structure for package.json, requirements.txt, or Dockerfile
+5. Dockerfile generated if not present, applying framework-specific build patterns and configurations
+6. Docker image built with streaming output captured to log file and emitted via WebSocket
+7. Container instantiated with port mapping and configuration from build spec
+8. Database updated with running status, container ID, image tag, and port information
+9. Deployment status broadcast to connected clients with success or failure indication
+
+### Database Schema
+
+**Users**: GitHub OAuth credentials, access tokens, and profile information for authenticated sessions
+
+**Repositories**: GitHub repository metadata including clone URLs, names, and unique repository identifiers
+
+**Deployments**: Core deployment records with status tracking, commit SHAs, build specifications, parent-child lineage, and timestamps
+
+**Containers**: Docker container runtime metadata including container IDs, port mappings, and operational status
+
+### GitHub Webhook Processing
+
+Webhook endpoint validates request signatures using HMAC-SHA256 with configured secret key. Push events trigger lookup of active deployments matching repository and branch criteria. For each matching deployment, a child deployment is created with the new commit SHA and queued for processing. The system gracefully handles concurrent webhook deliveries and provides detailed response feedback on queue status.
+
+### Security Considerations
+
+GitHub OAuth flow implemented with state parameter validation and secure token storage. Webhook signatures verified using constant-time comparison to prevent timing attacks. User access tokens stored in database for authenticated repository access. Docker containers run in isolated network namespaces with port mapping to host. Build directories use randomized UUIDs to prevent path traversal vulnerabilities.
 
 ## Technology Stack
 
-*   **Frontend**: React, Tailwind CSS
-*   **Backend**: Node.js, Express, Socket.IO
-*   **Database**: SQLite, Prisma
-*   **Infrastructure**: Docker
+### Backend
+- Node.js with Express framework for HTTP API and middleware pipeline
+- Prisma ORM for type-safe database operations and schema migrations
+- Socket.IO for WebSocket-based real-time communication
+- Passport.js for GitHub OAuth authentication strategy
+- p-queue for asynchronous job queue management
 
 
+### Frontend
+- React with functional components and hooks
+- Tailwind CSS for utility-first styling
+- Vite for build tooling and development server
