@@ -19,6 +19,17 @@ exports.initiateDeployment = async ({ repoUrl, buildSpec }) => {
         throw new Error("Invalid buildSpec: exposedPort is required");
     }
 
+    const existingDeployment = await prisma.deployment.findFirst({
+        where: {
+            status : 'RUNNING',
+            exposedPort:  buildSpec.exposedPort
+        }
+    })
+
+    if (existingDeployment) {
+        throw new Error("Deployment already running on this port");
+    }
+
     const repoMeta = await resolveRepository(repoUrl);
 
   const [repository, deployment] = await prisma.$transaction(async (tx) => {

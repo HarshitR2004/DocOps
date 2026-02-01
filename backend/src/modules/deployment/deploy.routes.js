@@ -1,8 +1,6 @@
 const express = require("express");
 const router = express.Router();
 const deployController = require("./deploy.controller");
-
-
 const validateBuildSpec = require("./validateBuildspec.middleware");
 
 router.post("/", validateBuildSpec, deployController.deployPublicRepo);

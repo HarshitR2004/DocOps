@@ -1,8 +1,10 @@
 const githubService = require("./github.service");
-const {redeployFromParent} = require("../deployment/services/redeploy.service");
+const { redeployFromParent } = require("../deployment/services/redeploy.service");
 const { prisma } = require("../../shared/config/prisma.config");
 const { verifySignature } = require("./verifySignature");
-const deployQueue = require("../deployment/deploy.queue");
+const { publishGitHubWebhookJob } = require("../../shared/infrastructure/rabbitmq/producer");
+const { JOB_TYPES } = require("../../shared/infrastructure/rabbitmq/queues.config");
+const { v4: uuidv4 } = require("uuid");
 
 exports.getGithubRepos = async (req, res) => {
     try {
@@ -33,7 +35,7 @@ exports.handleGithubWebhook = async (req, res) => {
   const branch = payload.ref.replace("refs/heads/", "");
   const commitSha = payload.after;
 
-  const repository  = await prisma.repository.findUnique({
+  const repository = await prisma.repository.findUnique({
     where: { githubRepoId: BigInt(repoId) },
   });
 
@@ -49,40 +51,39 @@ exports.handleGithubWebhook = async (req, res) => {
     },
   });
 
-  if (activeDeployments.length === 0){
-    return res.status(200).send("No active deployments exist")
+  if (activeDeployments.length === 0) {
+    return res.status(200).send("No active deployments exist");
   }
 
-  const queuedDeployments = [];
-  const failedDeployments = [];
+  // Publish jobs to RabbitMQ for each active deployment
+  const queuedJobs = [];
+  const failedJobs = [];
 
-  for (const parent of activeDeployments) {
+  for (const deployment of activeDeployments) {
     try {
-      await deployQueue.add(async () => {
-        try {
-          await redeployFromParent(parent.id, branch);
-          queuedDeployments.push(parent.id);
-        } catch (error) {
-          failedDeployments.push({ id: parent.id, error: error.message });
-          
-          await prisma.deployment.update({
-            where: { id: parent.id },
-            data: { status: "FAILED" }
-          });
-        }
+      const jobId = uuidv4();
+      await publishGitHubWebhookJob({
+        type: JOB_TYPES.GITHUB_WEBHOOK.PUSH,
+        jobId,
+        parentDeploymentId: deployment.id,
+        branch,
+        commitSha,
+        repositoryId: repository.id,
       });
-    } catch (queueError) {
-      failedDeployments.push({ id: parent.id, error: queueError.message });
+
+      queuedJobs.push({ deploymentId: deployment.id, jobId });
+    } catch (error) {
+      console.error(`[GitHub Webhook] Failed to queue job for deployment ${deployment.id}:`, error);
+      failedJobs.push({ deploymentId: deployment.id, error: error.message });
     }
   }
 
   res.status(200).json({
-    message: `Queued ${queuedDeployments.length} deployments`,
-    queued: queuedDeployments.length,
-    failed: failedDeployments.length,
-    failedDeployments
+    message: `Queued ${queuedJobs.length} redeployments`,
+    queued: queuedJobs.length,
+    failed: failedJobs.length,
+    queuedJobs,
+    failedJobs,
   });
-
-  
 };
 

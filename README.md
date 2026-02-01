@@ -12,33 +12,32 @@ DocOps is a Platform-as-a-Service (PaaS) solution that automates the deployment 
 
 **GitHub Integration Layer**: OAuth 2.0 authentication flow with repository access management and webhook-driven continuous deployment. Supports signature verification for secure webhook payload validation.
 
+
 ## Key Features
 
-### Automated Deployment Pipeline
+### Automated Deployment
 
-The platform provides  deployment for supported application frameworks through automated Dockerfile generation by the configuration provide by the user.
+Supports one-click deployments via auto-generated Dockerfiles based on user configuration. Uses RabbitMQ-backed async job queues to handle long-running tasks without blocking APIs, enabling concurrent and horizontally scalable deployments with isolated build environments.
 
-Deployment workflows are managed through an asynchronous job queue that ensures serialized execution per repository while enabling concurrent deployments across different projects. Each deployment generates isolated build environments in ephemeral directories with automatic cleanup post-deployment.
+### Continuous Delivery
 
-### Continuous Delivery Automation
+GitHub webhooks trigger automatic redeployments on code pushes. The system tracks deployment history using parent-child relationships, enabling clear lineage and smooth transitions between versions.
 
-GitHub webhook integration enables automated redeployment on code push events. The system maintains deployment lineage through parent-child relationships, allowing tracking of deployment history and rollback to previous commits. When a webhook is received, the platform identifies active deployments for the affected branch, queues child deployments with commit SHA references, and manages the transition from parent to child deployment states.
+### Rollback Support
 
-### Deployment Rollback System
+Enables one-click rollbacks to any previous commit by rebuilding containers from deployment history, preserving a complete audit trail of changes.
 
-Rollback functionality leverages deployment history stored in parent-child relationships to enable one-click reversion to previous application states. Users can select any historical commit from the deployment chain, triggering creation of a new child deployment that checks out the specific commit SHA and rebuilds the container at that point in history. This maintains an audit trail of all deployment changes and state transitions.
+### Container Management
 
-### Container Lifecycle Management
+Provides full lifecycle control over Docker containers (start, stop, delete, reconfigure), including networking, volumes, and port mappings. Failed deployments are isolated, while successful ones are registered for monitoring.
 
-Comprehensive container control operations including start, stop, delete, and reconfigure actions. The platform manages Docker container lifecycle through direct API integration, handling port mapping, volume management, and container networking. Failed containers are automatically marked and isolated, while successful deployments register container metadata for monitoring and management operations.
+### Build Configuration
 
-### Build Specification System
+Flexible JSON-based build specs allow custom runtimes, multi-step builds, environment variables, and port settings, while remaining compatible with standard Docker workflows.
 
-Advanced build configuration through JSON-based build specs supporting custom runtime images, multi-command build steps, environment variable injection, and port exposure settings. Users can define language-specific configurations with explicit runtime specifications, and customize the entire build pipeline while maintaining compatibility with standard Dockerfile workflows.
+### Observability
 
-### Real-Time Observability
-
-Live log streaming delivers build output and runtime logs to connected clients with minimal latency through WebSocket connections. The system maintains persistent log files on disk while simultaneously streaming to connected dashboards. Build logs capture Docker image construction output, while runtime logs provide container stdout/stderr streams for debugging and monitoring.
+Real-time log streaming via WebSockets for both build and runtime logs, with persistent log storage for debugging and monitoring.
 
 ## Technical Implementation
 
@@ -48,22 +47,33 @@ Live log streaming delivers build output and runtime logs to connected clients w
 
 **Prisma ORM with SQLite**: Type-safe database access layer with automatic migration management and relation loading. Schema defines deployments, repositories, containers, and user models with foreign key relationships and cascading operations.
 
-**Queue-Based Job Processing**: In-memory job queue with promise-based task execution and error recovery. Supports adding async functions that execute sequentially with automatic retry on transient failures.
+**RabbitMQ-Based Job Processing**: Asynchronous message queue system for non-blocking deployment operations. API endpoints immediately return 202 Accepted status and publish jobs to RabbitMQ queues, allowing long-running Docker operations to be processed by separate worker services. Features include:
+- Three dedicated queues: deployment operations, container lifecycle, and GitHub webhook events
+- Automatic retry mechanism (up to 3 attempts) with dead letter queues for failed jobs
+- Message persistence for job recovery across service restarts
+- Horizontal scaling through multiple concurrent worker instances
+
+**Worker Services**: Separate Node.js processes consuming from RabbitMQ queues:
+- **Deployment Worker** - Processes full deployment creation, redeployment, and rollback operations
+- **Container Worker** - Handles container start, stop, and delete operations
+- **GitHub Webhook Worker** - Processes webhook-triggered redeployments on code push
 
 **Git Integration**: Direct git command execution through child process spawning for repository cloning, branch checkout, and commit resolution. Supports both public and authenticated repository access.
 
 **Docker Service Layer**: Abstraction over Docker CLI and API for image building, container creation, lifecycle management, and cleanup operations. Handles streaming build output to log files while emitting progress events.
 
-**WebSocket Infrastructure**: Socket.IO server managing real-time bidirectional communication with room-based message routing. Clients subscribe to deployment-specific rooms for isolated log and status streams.
+**WebSocket Infrastructure**: Socket.IO server managing real-time bidirectional communication with room-based message routing. Clients subscribe to deployment-specific rooms for isolated log and status streams. Workers emit status updates for deployments, container operations, and webhook processing events.
 
 ## Technology Stack
 
 ### Backend
 - Node.js with Express framework for HTTP API and middleware pipeline
 - Prisma ORM for type-safe database operations and schema migrations
+- RabbitMQ for asynchronous message-based job processing
 - Socket.IO for WebSocket-based real-time communication
 - Passport.js for GitHub OAuth authentication strategy
-- p-queue for asynchronous job queue management
+- amqplib for RabbitMQ protocol communication
+- Docker CLI for container operations
 
 
 ### Frontend

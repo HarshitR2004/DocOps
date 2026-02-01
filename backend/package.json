@@ -4,7 +4,13 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon src/server.js"
+    "dev": "nodemon src/server.js",
+    "start": "node src/server.js",
+    "worker:deployment": "node src/workers/deployment-worker.js",
+    "worker:container": "node src/workers/container-worker.js",
+    "worker:github": "node src/workers/github-webhook-worker.js",
+    "workers": "concurrently \"npm run worker:deployment\" \"npm run worker:container\" \"npm run worker:github\"",
+    "dev:all": "concurrently \"npm run dev\" \"npm run workers\""
   },
   "keywords": [],
   "author": "",
@@ -12,6 +18,7 @@
   "description": "",
   "dependencies": {
     "@prisma/client": "^5.2.0",
+    "amqplib": "^0.10.9",
     "axios": "^1.13.2",
     "body-parser": "^2.2.2",
     "crypto": "^1.0.1",
@@ -26,6 +33,7 @@
     "uuid": "^13.0.0"
   },
   "devDependencies": {
+    "concurrently": "^9.2.1",
     "nodemon": "^3.1.11"
   }
 }
