@@ -48,8 +48,8 @@ const JOB_TYPES = {
 
 // Consumer options
 const CONSUMER_OPTIONS = {
-  prefetch: 1, // Process one message at a time per worker
-  noAck: false, // Require manual acknowledgment
+  prefetch: 1, 
+  noAck: false, 
 };
 
 module.exports = {

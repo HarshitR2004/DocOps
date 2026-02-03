@@ -6,9 +6,7 @@ const deployService = require("../modules/deployment/deploy.service");
 const ioManager = require("../shared/infrastructure/sockets/io");
 const { Server } = require("socket.io");
 
-/**
- * Handler for deployment jobs
- */
+// Handler for deployment jobs
 async function handleDeploymentJob(data, msg) {
   const { type, jobId, deploymentId } = data;
 
@@ -33,7 +31,7 @@ async function handleDeploymentJob(data, msg) {
       case JOB_TYPES.DEPLOYMENT.CREATE:
       case JOB_TYPES.DEPLOYMENT.REDEPLOY:
       case JOB_TYPES.DEPLOYMENT.ROLLBACK:
-        // All these operations use the same processing logic
+        
         await deployService.processDeployment(deployment);
         console.log(`[Deployment Worker] Successfully processed deployment ${deploymentId}`);
         break;
@@ -73,9 +71,7 @@ async function handleDeploymentJob(data, msg) {
   }
 }
 
-/**
- * Initialize and start the deployment worker
- */
+
 async function startWorker() {
   try {
     console.log("[Deployment Worker] Starting...");
@@ -84,9 +80,7 @@ async function startWorker() {
     await connectRabbitMQ();
     await setupDeadLetterExchange();
 
-    // Initialize Socket.IO for real-time updates
-    // Note: Workers need Socket.IO client to emit events to the main server
-    // For now, we'll use the shared ioManager which should be initialized
+
     const io = new Server({
       cors: {
         origin: "*",
@@ -115,13 +109,10 @@ async function startWorker() {
   }
 }
 
-/**
- * Graceful shutdown
- */
+
 async function gracefulShutdown(signal) {
   console.log(`\n[Deployment Worker] ${signal} received. Shutting down gracefully...`);
   
-  // Close RabbitMQ connection (this will also stop consuming)
   await closeConnection();
   
   console.log("[Deployment Worker] Shutdown completed");

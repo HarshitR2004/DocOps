@@ -1,12 +1,7 @@
 const { getChannel } = require("./connection");
 const { QUEUES } = require("./queues.config");
 
-/**
- * Generic function to publish messages to any queue
- * @param {string} queueName - Name of the queue
- * @param {Object} queueOptions - Queue options
- * @param {Object} data - Data to send (will be JSON stringified)
- */
+
 async function publishToQueue(queueName, queueOptions, data) {
   try {
     const channel = getChannel();
@@ -40,23 +35,18 @@ async function publishToQueue(queueName, queueOptions, data) {
   }
 }
 
-/**
- * Publish to deployment queue
- */
+//Publish to deployment queue
 async function publishDeploymentJob(data) {
   return publishToQueue(QUEUES.DEPLOYMENT.name, QUEUES.DEPLOYMENT.options, data);
 }
 
-/**
- * Publish to container operations queue
- */
+// Publish to container operations queue
+
 async function publishContainerJob(data) {
   return publishToQueue(QUEUES.CONTAINER_OPERATIONS.name, QUEUES.CONTAINER_OPERATIONS.options, data);
 }
 
-/**
- * Publish to GitHub webhook queue
- */
+// Publish to GitHub webhook queue
 async function publishGitHubWebhookJob(data) {
   return publishToQueue(QUEUES.GITHUB_WEBHOOK.name, QUEUES.GITHUB_WEBHOOK.options, data);
 }

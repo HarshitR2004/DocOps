@@ -58,7 +58,7 @@ Real-time log streaming via WebSockets for both build and runtime logs, with per
 - **Container Worker** - Handles container start, stop, and delete operations
 - **GitHub Webhook Worker** - Processes webhook-triggered redeployments on code push
 
-**Git Integration**: Direct git command execution through child process spawning for repository cloning, branch checkout, and commit resolution. Supports both public and authenticated repository access.
+**Git Integration**: Direct git command execution through child process spawning. Implements **repository mirroring and caching** to optimize build times; repositories are cached locally to minimize network usage, updated via `git fetch`, and then cloned to isolated build workspaces. Supports both public and authenticated repository access.
 
 **Docker Service Layer**: Abstraction over Docker CLI and API for image building, container creation, lifecycle management, and cleanup operations. Handles streaming build output to log files while emitting progress events.
 

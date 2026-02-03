@@ -32,10 +32,11 @@ exports.processDeployment = async (deployment) => {
   let buildSpec = JSON.parse(deployment.buildSpec);
 
   try {
-    // 1. Clone Repository
-    await run(`git clone -b ${branch} ${repoUrl} ${workDir}`);
+    const cachePath = await ensureRepoCache(repoUrl);
 
-    // 2. Determine Commit SHA
+    await run(`git clone -b ${branch} ${cachePath} ${workDir}`);
+
+    // 3. Determine Commit SHA
     let commitSha = deployment.commitSha;
     if (commitSha && commitSha !== "UNKNOWN") {
       await run(`git checkout ${commitSha}`, workDir);
@@ -46,7 +47,7 @@ exports.processDeployment = async (deployment) => {
     const imageTag = repoName.toLowerCase() + commitSha.substring(0, 7);
 
 
-    // 3. Ensure Build Spec (Apply defaults based on language)
+    // 4. Ensure Build Spec (Apply defaults based on language)
     buildSpec = await ensureBuildSpec(deployment, buildSpec);
 
     await generateDockerfile(workDir, buildSpec);
@@ -120,15 +121,51 @@ exports.processDeployment = async (deployment) => {
         await fs.promises.rm(workDir, { recursive: true, force: true });
       }
     } catch (cleanupErr) {
-        // ignore cleanup errors
+        
     }
   }
 };
 
 
-/**
- * Helper to apply default build specification based on language
- */
+ //Ensures the repository is cached locally.
+async function ensureRepoCache(repoUrl) {
+    const os = require('os');
+    const CACHE_ROOT = path.join(os.tmpdir(), 'docops-cache');
+    
+    // Create cache root if it doesn't exist
+    if (!fs.existsSync(CACHE_ROOT)) {
+        await fs.promises.mkdir(CACHE_ROOT, { recursive: true });
+    }
+
+    // Generate a safe folder name from the URL
+    const sanitize = (url) => {
+        return url.replace(/^https?:\/\//, '').replace(/.git$/, '').replace(/[^a-zA-Z0-9-]/g, '-');
+    };
+    
+    const repoFolderName = sanitize(repoUrl);
+    const repoCachePath = path.join(CACHE_ROOT, repoFolderName);
+
+    if (fs.existsSync(repoCachePath)) {
+        console.log(`[Cache] Updating existing cache for ${repoUrl}...`);
+        try {
+            // Fetch updates
+            await run(`git fetch origin`, repoCachePath);
+        } catch (err) {
+            console.warn(`[Cache] Failed to fetch updates for ${repoUrl}, trying to re-clone. Error: ${err.message}`);
+            // If fetch fails (e.g., corrupted repo), remove and re-clone
+            await fs.promises.rm(repoCachePath, { recursive: true, force: true });
+            await run(`git clone ${repoUrl} ${repoCachePath}`);
+        }
+    } else {
+        console.log(`[Cache] Clonining new repo to cache: ${repoUrl}...`);
+        await run(`git clone ${repoUrl} ${repoCachePath}`);
+    }
+
+    return repoCachePath;
+}
+
+
+// Helper to apply default build specification based on language
 async function ensureBuildSpec(deployment, currentBuildSpec) {
     if (currentBuildSpec.language === 'detect') {
          await prisma.deployment.update({

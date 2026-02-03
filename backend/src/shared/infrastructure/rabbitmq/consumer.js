@@ -1,12 +1,6 @@
 const { getChannel } = require("./connection");
 
-/**
- * Generic consumer function for RabbitMQ queues
- * @param {string} queueName - Name of the queue to consume from
- * @param {Object} queueOptions - Queue options (durable, deadLetterExchange, etc.)
- * @param {Function} handler - Async function to process messages: (data, msg) => Promise<void>
- * @param {Object} consumerOptions - Consumer options (prefetch, etc.)
- */
+
 async function consumeFromQueue(queueName, queueOptions, handler, consumerOptions = {}) {
   const channel = getChannel();
 
@@ -29,10 +23,9 @@ async function consumeFromQueue(queueName, queueOptions, handler, consumerOption
       }
 
       const content = msg.content.toString();
-      let data;
+      const data = JSON.parse(content);
 
       try {
-        data = JSON.parse(content);
         console.log(`[RabbitMQ] Processing message from ${queueName}:`, {
           jobType: data.type,
           jobId: data.jobId,
@@ -56,7 +49,7 @@ async function consumeFromQueue(queueName, queueOptions, handler, consumerOption
           // Retry by re-queuing with updated retry count
           console.log(`[RabbitMQ] Retrying message (attempt ${retryCount + 1}/${maxRetries})`);
           
-          channel.nack(msg, false, false); // Don't requeue, let DLX handle it
+          channel.nack(msg, false, false); 
           
           // Publish back to queue with incremented retry count
           channel.sendToQueue(
@@ -71,21 +64,18 @@ async function consumeFromQueue(queueName, queueOptions, handler, consumerOption
             }
           );
         } else {
-          // Max retries reached, reject and send to DLQ
           console.error(`[RabbitMQ] Max retries reached for message. Sending to DLQ.`);
-          channel.nack(msg, false, false); // Reject without requeue (goes to DLQ)
+          channel.nack(msg, false, false); 
         }
       }
     },
     {
-      noAck: false, // Require manual acknowledgment
+      noAck: false, 
     }
   );
 }
 
-/**
- * Set up dead letter exchange for failed messages
- */
+// Dead letter exchange setup
 async function setupDeadLetterExchange() {
   const channel = getChannel();
 
